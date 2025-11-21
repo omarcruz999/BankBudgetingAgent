@@ -13,11 +13,12 @@ import csv
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -26,7 +27,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore[import
 from dotenv import load_dotenv  # type: ignore[import]
 
 
-LOG_PATH = Path(__file__).parent / "agent.log"
+ROOT_DIR = Path(__file__).parent.resolve()
+LOG_PATH = ROOT_DIR / "agent.log"
 logging.basicConfig(
     filename=str(LOG_PATH),
     level=logging.INFO,
@@ -322,32 +324,36 @@ def format_tool_trace(messages: List[BaseMessage]) -> str:
     tool_events_by_id: Dict[str, Dict[str, Any]] = {}
     for msg in messages:
         if isinstance(msg, HumanMessage):
+            text = _shorten_paths_in_text(_coerce_message_text(msg.content).strip())
             events.append(
                 {
                     "label": "User request",
-                    "details": [_coerce_message_text(msg.content).strip()],
+                    "details": [text],
                 }
             )
         elif isinstance(msg, AIMessage):
             if msg.tool_calls:
                 for call in msg.tool_calls:
                     args = call.get("args", {})
-                    label = f"Assistant called `{call['name']}`"
-                    detail = f"Args: {_summarize_args(args)}"
+                    label = _shorten_paths_in_text(
+                        f"Assistant called `{call['name']}`"
+                    )
+                    detail = _shorten_paths_in_text(f"Args: {_summarize_args(args)}")
                     event = {"label": label, "details": [detail]}
                     events.append(event)
                     call_id = call.get("id")
                     if call_id:
                         tool_events_by_id[str(call_id)] = event
             elif msg.content:
+                draft = _shorten_paths_in_text(_coerce_message_text(msg.content).strip())
                 events.append(
                     {
                         "label": "Assistant draft",
-                        "details": [_coerce_message_text(msg.content).strip()],
+                        "details": [draft],
                     }
                 )
         elif isinstance(msg, ToolMessage):
-            summary = _summarize_tool_response(msg.name, msg.content)
+            summary = _shorten_paths_in_text(_summarize_tool_response(msg.name, msg.content))
             if msg.tool_call_id and msg.tool_call_id in tool_events_by_id:
                 tool_events_by_id[msg.tool_call_id]["details"].append(f"Result: {summary}")
             else:
@@ -404,227 +410,359 @@ def _prompt_statement_path(default_statement: Path) -> str:
             print(f"Invalid statement path: {exc}\nPlease try again.\n")
 
 
-def _format_summary_html(text: str) -> str:
-        """Convert the agent's natural-language reply into sanitized HTML."""
+_BOLD_PATTERN = re.compile(r"\*\*(.+?)\*\*")
+_ITALIC_PATTERN = re.compile(r"_(.+?)_")
+_CODE_PATTERN = re.compile(r"`([^`]+)`")
+_WORKSPACE_REPLACEMENTS = [
+    str(ROOT_DIR),
+    str(ROOT_DIR).replace("\\", "\\\\"),
+    ROOT_DIR.as_posix(),
+]
 
-        cleaned = text.strip()
-        if not cleaned:
-                return "<p><em>No response returned.</em></p>"
-        paragraphs = [block.strip() for block in cleaned.split("\n\n") if block.strip()]
-        html_blocks: List[str] = []
-        for block in paragraphs:
-                escaped = escape(block).replace("\n", "<br />")
-                html_blocks.append(f"<p>{escaped}</p>")
-        return "".join(html_blocks)
+
+def _shorten_paths_in_text(text: str) -> str:
+    if not text:
+        return text
+    result = text
+    for marker in _WORKSPACE_REPLACEMENTS:
+        result = result.replace(marker, ".")
+    return result
+
+
+def _apply_basic_formatting(segment: str) -> str:
+    escaped = escape(segment)
+    escaped = _BOLD_PATTERN.sub(r"<strong>\1</strong>", escaped)
+    escaped = _ITALIC_PATTERN.sub(r"<em>\1</em>", escaped)
+    return escaped.replace("\n", "<br />")
+
+
+def _format_inline_html(text: str) -> str:
+    """Escape HTML, support inline formatting, and highlight code spans."""
+
+    if not text:
+        return ""
+
+    html_parts: List[str] = []
+    last = 0
+    for match in _CODE_PATTERN.finditer(text):
+        start, end = match.span()
+        if start > last:
+            html_parts.append(_apply_basic_formatting(text[last:start]))
+        html_parts.append(f"<code>{escape(match.group(1))}</code>")
+        last = end
+    if last < len(text):
+        html_parts.append(_apply_basic_formatting(text[last:]))
+    return "".join(html_parts)
+
+
+def _format_summary_html(text: str) -> str:
+    """Convert the agent narrative into structured, markdown-free HTML."""
+
+    cleaned = text.strip()
+    if not cleaned:
+        return "<p><em>No response returned.</em></p>"
+
+    html_parts: List[str] = []
+    list_type: str | None = None
+
+    def close_list() -> None:
+        nonlocal list_type
+        if list_type:
+            html_parts.append(f"</{list_type}>")
+            list_type = None
+
+    for raw_line in cleaned.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            close_list()
+            continue
+        if stripped.startswith("### "):
+            close_list()
+            html_parts.append(f"<h3>{_format_inline_html(stripped[4:])}</h3>")
+            continue
+        if stripped.startswith("## "):
+            close_list()
+            html_parts.append(f"<h3>{_format_inline_html(stripped[3:])}</h3>")
+            continue
+        if stripped.startswith(('- ', '* ')):
+            if list_type != "ul":
+                close_list()
+                html_parts.append("<ul class=\"summary-list\">")
+                list_type = "ul"
+            html_parts.append(f"<li>{_format_inline_html(stripped[2:])}</li>")
+            continue
+        if re.match(r"^\d+\.\s+", stripped):
+            if list_type != "ol":
+                close_list()
+                html_parts.append("<ol class=\"summary-list\">")
+                list_type = "ol"
+            content = re.sub(r"^\d+\.\s+", "", stripped)
+            html_parts.append(f"<li>{_format_inline_html(content)}</li>")
+            continue
+        close_list()
+        html_parts.append(f"<p>{_format_inline_html(stripped)}</p>")
+
+    close_list()
+    return "".join(html_parts)
 
 
 def _format_trace_html(trace: str) -> str:
-        """Convert the textual trace into nested list markup for readability."""
+    """Render the textual trace as card-like elements."""
 
-        trimmed = trace.strip()
-        if not trimmed:
-                return "<p>No tool interactions were recorded.</p>"
-        items = []
-        current: Dict[str, List[str]] | None = None
-        for line in trimmed.splitlines():
-                if line.startswith("- "):
-                        if current:
-                                items.append(current)
-                        title = line[2:].strip().replace("**", "")
-                        current = {"title": title, "details": []}
-                elif line.startswith("  ") and current:
-                        detail = line.strip().replace("**", "")
-                        current["details"].append(detail)
-        if current:
-                items.append(current)
-        if not items:
-                escaped = escape(trimmed)
-                return f"<pre class=\"trace-block\">{escaped}</pre>"
-        html_lines = ["<ul class=\"trace-list\">"]
-        for item in items:
-                html_lines.append("<li>")
-                html_lines.append(f"<div class=\"trace-title\">{escape(item['title'])}</div>")
-                if item["details"]:
-                        html_lines.append("<ul class=\"trace-details\">")
-                        for detail in item["details"]:
-                                html_lines.append(f"<li>{escape(detail)}</li>")
-                        html_lines.append("</ul>")
-                html_lines.append("</li>")
-        html_lines.append("</ul>")
-        return "".join(html_lines)
+    trimmed = trace.strip()
+    if not trimmed:
+        return "<p>No tool interactions were recorded.</p>"
+
+    events: List[Dict[str, List[str]]] = []
+    current: Dict[str, List[str]] | None = None
+    for line in trimmed.splitlines():
+        if line.startswith("- **"):
+            if current:
+                events.append(current)
+            body = line[4:]
+            if "**" in body:
+                label, remainder = body.split("**", 1)
+            else:
+                label, remainder = body, ""
+            detail = remainder.lstrip(": ").strip()
+            current = {"title": label.strip(), "details": []}
+            if detail:
+                current["details"].append(detail)
+        elif line.startswith("  ") and current:
+            current["details"].append(line.strip())
+    if current:
+        events.append(current)
+    if not events:
+        return f"<pre class=\"trace-block\">{escape(trimmed)}</pre>"
+
+    html_parts = ["<div class=\"trace-grid\">"]
+    for event in events:
+        html_parts.append("<article class=\"trace-card\">")
+        html_parts.append(
+            f"<div class=\"trace-card__title\">{_format_inline_html(event['title'])}</div>"
+        )
+        if event["details"]:
+            html_parts.append("<ul class=\"trace-card__details\">")
+            for detail in event["details"]:
+                html_parts.append(f"<li>{_format_inline_html(detail)}</li>")
+            html_parts.append("</ul>")
+        html_parts.append("</article>")
+    html_parts.append("</div>")
+    return "".join(html_parts)
+
+
+def _format_human_timestamp(moment: datetime) -> str:
+    aware = moment.astimezone(timezone.utc)
+    return aware.strftime("%B %d, %Y at %I:%M %p %Z")
+
+
+def _extract_export_path(messages: List[BaseMessage]) -> Optional[str]:
+    for msg in messages:
+        if isinstance(msg, ToolMessage) and msg.name == "export_budget_report":
+            text = _coerce_message_text(msg.content).strip()
+            match = re.search(r"Budget report written to (.+)", text)
+            if match:
+                return match.group(1).strip()
+            if text:
+                return text
+    return None
 
 
 def _build_html_document(
-        generated_at: datetime,
-        statement_path: str,
-        instructions: str,
-        summary_html: str,
-        trace_html: str,
+    generated_at: datetime,
+    statement_path: str,
+    instructions: str,
+    summary_html: str,
+    trace_html: str,
+    export_path: Optional[str] = None,
 ) -> str:
-        """Construct a polished standalone HTML document for the report."""
+    """Construct a polished standalone HTML document for the report."""
 
-        metadata_rows = "".join(
-                [
-                        f"<tr><th>Generated</th><td>{escape(generated_at.isoformat())}Z</td></tr>",
-                        "<tr><th>Statement</th><td>"
-                        f"{escape(str(Path(statement_path).expanduser().resolve()))}</td></tr>",
-                        f"<tr><th>Instructions</th><td>{escape(instructions)}</td></tr>",
-                ]
+    rows = [
+        f"<tr><th>Generated</th><td>{escape(_format_human_timestamp(generated_at))}</td></tr>",
+        f"<tr><th>Statement</th><td>{escape(Path(statement_path).name)}</td></tr>",
+        f"<tr><th>Instructions</th><td>{escape(instructions)}</td></tr>",
+    ]
+    if export_path:
+        rows.append(
+            f"<tr><th>Exported PDF</th><td><code>{escape(export_path)}</code></td></tr>"
         )
-        return f"""<!DOCTYPE html>
+    metadata_rows = "".join(rows)
+    return f"""<!DOCTYPE html>
 <html lang=\"en\">
 <head>
-    <meta charset=\"UTF-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-    <title>Budget Analysis Report</title>
-    <style>
-        :root {{
-            color-scheme: light dark;
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            --accent: #0062ff;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text-muted: #475467;
-            --border: #d0d5dd;
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>Budget Analysis Report</title>
+  <style>
+    :root {{
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --accent: #0f62fe;
+      --accent-soft: #e0ecff;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475467;
+      --border: #d7dce4;
+    }}
+    body {{
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }}
+    header {{
+      background: linear-gradient(135deg, var(--accent), #54b7ff);
+      color: white;
+      padding: 2.5rem 3rem 3.5rem;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+    }}
+    header h1 {{
+      margin: 0 0 0.4rem;
+      font-size: 2.3rem;
+    }}
+    header p {{
+      margin: 0;
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.9);
+    }}
+    main {{
+      max-width: 960px;
+      margin: -2rem auto 3rem;
+      padding: 0 1.5rem;
+    }}
+    section {{
+      background: var(--card);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--border);
+    }}
+    section h2 {{
+      margin-top: 0;
+      letter-spacing: 0.01em;
+    }}
+    table.meta {{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.98rem;
+    }}
+    table.meta th {{
+      text-align: left;
+      width: 28%;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0.35rem 0;
+    }}
+    table.meta td {{
+      padding: 0.35rem 0;
+    }}
+    .summary h3 {{
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+      font-size: 1.15rem;
+    }}
+    .summary p {{
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }}
+    .summary-list {{
+      margin: 0 0 1.1rem 1.5rem;
+      padding: 0;
+    }}
+    .trace-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }}
+    .trace-card {{
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }}
+    .trace-card__title {{
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      color: var(--accent);
+    }}
+    .trace-card__details {{
+      margin: 0;
+      padding-left: 1.2rem;
+      color: var(--muted);
+    }}
+        .trace-card__details li {{
+            margin-bottom: 0.35rem;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }}
-        body {{
-            margin: 0;
-            padding: 0;
-            background: var(--bg);
-            color: #0f172a;
-        }}
-        header {{
-            background: linear-gradient(135deg, var(--accent), #00b0ff);
-            color: white;
-            padding: 2.5rem 3rem;
-            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.2);
-        }}
-        header h1 {{
-            margin: 0 0 0.5rem;
-            font-size: 2rem;
-            letter-spacing: 0.02em;
-        }}
-        header p {{
-            margin: 0;
-            font-size: 1rem;
-            color: rgba(255,255,255,0.85);
-        }}
-        main {{
-            max-width: 960px;
-            margin: -2rem auto 3rem;
-            padding: 0 1.5rem;
-        }}
-        section {{
-            background: var(--card);
-            border-radius: 18px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border);
-        }}
-        h2 {{
-            margin-top: 0;
-            color: #0f172a;
-        }}
-        table.meta {{
-            width: 100%;
-            border-collapse: collapse;
+        code {{
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            background: var(--accent-soft);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
             font-size: 0.95rem;
         }}
-        table.meta th {{
-            text-align: left;
-            width: 25%;
-            font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.4rem 0;
-        }}
-        table.meta td {{
-            padding: 0.4rem 0;
-        }}
-        .summary p {{
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }}
-        .trace-list {{
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }}
-        .trace-list > li {{
-            border-left: 3px solid var(--accent);
-            padding-left: 1rem;
-            margin-bottom: 1rem;
-        }}
-        .trace-title {{
-            font-weight: 600;
-            margin-bottom: 0.35rem;
-        }}
-        .trace-details {{
-            list-style: disc;
-            margin: 0 0 0 1.5rem;
-            padding: 0;
-            color: var(--text-muted);
-        }}
-        .trace-details li {{
-            margin-bottom: 0.25rem;
-        }}
-        @media (max-width: 640px) {{
-            header {{ padding: 2rem 1.5rem; }}
-            main {{ padding: 0 1rem; }}
-            section {{ padding: 1.5rem; }}
-        }}
-    </style>
+    @media (max-width: 640px) {{
+      header {{ padding: 2rem 1.5rem 3rem; }}
+      main {{ padding: 0 1rem; }}
+      section {{ padding: 1.5rem; }}
+    }}
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Budget Analysis Report</h1>
-        <p>Prepared by the Bank Statement Budgeting Agent</p>
-    </header>
-    <main>
-        <section>
-            <h2>Session Overview</h2>
-            <table class=\"meta\">
-                {metadata_rows}
-            </table>
-        </section>
-        <section class=\"summary\">
-            <h2>Executive Summary</h2>
-            {summary_html}
-        </section>
-        <section>
-            <h2>LLM Interaction Highlights</h2>
-            {trace_html}
-        </section>
-    </main>
+  <header>
+    <h1>Budget Analysis Report</h1>
+    <p>Prepared by the Bank Statement Budgeting Agent</p>
+  </header>
+  <main>
+    <section>
+      <h2>Session Overview</h2>
+      <table class=\"meta\">
+        {metadata_rows}
+      </table>
+    </section>
+    <section class=\"summary\">
+      <h2>Executive Summary</h2>
+      {summary_html}
+    </section>
+    <section>
+      <h2>LLM Interaction Highlights</h2>
+      {trace_html}
+    </section>
+  </main>
 </body>
 </html>
 """
 
 
 def _generate_html_report(
-        statement_path: str, instructions: str, outputs_dir: Path
+    statement_path: str, instructions: str, outputs_dir: Path
 ) -> Path:
-        """Run the agent and write its response/trace to a styled HTML report."""
+    """Run the agent and write its response/trace to a styled HTML report."""
 
-        result = run_budget_review(statement_path, instructions)
-        generated_at = datetime.utcnow()
-        timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
-        output_file = outputs_dir / f"budget_agent_result_{timestamp}.html"
-        final_reply = extract_final_reply(result).strip()
-        trace_block = format_tool_trace(result.get("messages", []))
-        summary_html = _format_summary_html(final_reply)
-        trace_html = _format_trace_html(trace_block)
-        document = _build_html_document(
-                generated_at=generated_at,
-                statement_path=statement_path,
-                instructions=instructions,
-                summary_html=summary_html,
-                trace_html=trace_html,
-        )
-        outputs_dir.mkdir(parents=True, exist_ok=True)
-        with output_file.open("w", encoding="utf-8") as handle:
-                handle.write(document)
-        return output_file
+    result = run_budget_review(statement_path, instructions)
+    generated_at = datetime.now(timezone.utc)
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    output_file = outputs_dir / f"budget_agent_result_{timestamp}.html"
+    final_reply = extract_final_reply(result).strip()
+    trace_block = format_tool_trace(result.get("messages", []))
+    summary_html = _format_summary_html(final_reply)
+    trace_html = _format_trace_html(trace_block)
+    export_path = _extract_export_path(result.get("messages", []))
+    document = _build_html_document(
+        generated_at=generated_at,
+        statement_path=statement_path,
+        instructions=instructions,
+        summary_html=summary_html,
+        trace_html=trace_html,
+        export_path=export_path,
+    )
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w", encoding="utf-8") as handle:
+        handle.write(document)
+    return output_file
 
 
 def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path) -> None:
