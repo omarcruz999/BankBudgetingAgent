@@ -58,11 +58,17 @@ pip install langchain langchain-google-genai python-dotenv
    python bank_agent.py
    ```
 3. When prompted, enter the path to your CSV bank statement. Press Enter to use
-the default sample at `samples/sample_statement_large.csv`.
-4. The agent will display a "Working..." message, then write a Markdown report
-   to the `outputs/` folder (e.g., `outputs/budget_agent_result_<timestamp>.md`).
-5. Open the generated report in your editor or viewer of choice to read the
-   narrative summary and LLM interaction trace.
+  the default sample at `samples/sample_statement_large.csv`.
+4. Use the interactive menu to decide what happens next:
+  - Option 1 runs the quick summary prompt included with the project.
+  - Option 2 lets you provide completely custom instructions for the agent.
+  - Option 3 allows you to switch to a different statement path without
+    restarting the program.
+  - Option 4 exits.
+5. Each analysis run displays progress in the terminal and writes a Markdown
+  report to the `outputs/` folder (e.g., `outputs/budget_agent_result_<timestamp>.md`).
+6. Open the generated report in your editor or viewer of choice to read the
+  narrative summary and LLM interaction trace.
 
 ## Project Structure
 

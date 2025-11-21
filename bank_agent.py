@@ -384,54 +384,107 @@ def run_budget_review(statement_path: str, additional_prompt: str) -> Dict[str, 
     return result
 
 
+def _prompt_statement_path(default_statement: Path) -> str:
+    """Interactively gather and validate the statement path from the user."""
+
+    while True:
+        user_input = input(
+            "Enter the path to your CSV bank statement "
+            f"(press Enter for sample: {default_statement}): "
+        ).strip()
+        candidate = user_input or str(default_statement)
+        try:
+            resolved = _resolve_path(candidate)
+            return str(resolved)
+        except Exception as exc:
+            print(f"Invalid statement path: {exc}\nPlease try again.\n")
+
+
+def _generate_markdown_report(
+    statement_path: str, instructions: str, outputs_dir: Path
+) -> Path:
+    """Run the agent and write its response/trace to a Markdown report."""
+
+    result = run_budget_review(statement_path, instructions)
+    generated_at = datetime.utcnow()
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    output_file = outputs_dir / f"budget_agent_result_{timestamp}.md"
+    final_reply = extract_final_reply(result).strip()
+    trace_block = format_tool_trace(result.get("messages", []))
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w", encoding="utf-8") as handle:
+        handle.write("# Budget Analysis Report\n\n")
+        handle.write(f"- **Generated on:** {generated_at.isoformat()}Z\n")
+        handle.write(
+            "- **Statement reviewed:** "
+            f"{Path(statement_path).expanduser().resolve()}\n"
+        )
+        handle.write(f"- **Guidance prompt:** {instructions}\n\n")
+        handle.write("## Summary\n\n")
+        handle.write(final_reply or "_No response returned._")
+        handle.write("\n\n## LLM Interaction Highlights\n\n")
+        if trace_block.strip():
+            handle.write(trace_block)
+            if not trace_block.endswith("\n"):
+                handle.write("\n")
+        else:
+            handle.write("- No tool interactions were recorded.\n")
+    return output_file
+
+
+def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path) -> None:
+    """Execute an agent run with helpful CLI messaging."""
+
+    print("\nWorking on your budgeting analysis...\n")
+    try:
+        report_path = _generate_markdown_report(statement_path, instructions, outputs_dir)
+        print(f"Analysis complete! Results saved to: {report_path}\n")
+    except Exception as exc:
+        logger.exception("Budget analysis run failed")
+        print(f"An error occurred while running the agent: {exc}\n")
+
+
 def main() -> None:
-    """CLI entry point that accepts a statement path and runs an example prompt."""
+    """Interactive CLI entry point with multiple analysis options."""
 
     workspace = Path(__file__).parent
     default_statement = workspace / "samples" / "sample_statement_large.csv"
     outputs_dir = workspace / "outputs"
-    outputs_dir.mkdir(parents=True, exist_ok=True)
     print("Bank Statement Budgeting Agent")
     print("--------------------------------------------------")
     print(f"Sample statements available under: {default_statement.parent}")
     print(f" - Default sample: {default_statement}")
-    user_path = input(
-        f"Enter the path to your CSV bank statement (press Enter for sample: {default_statement}): "
-    ).strip()
-    if not user_path:
-        user_path = str(default_statement)
+    statement_path = _prompt_statement_path(default_statement)
     example_prompt = (
         "Summarize overall income vs expenses, highlight any category exceeding $500, "
         "call out the five largest expenses, describe spending trends you notice, "
         "and provide three actionable budgeting recommendations. Format amounts in USD "
         "and deliver a detailed narrative without asking follow-up questions."
     )
-    try:
-        print("Working on your budgeting analysis...\n")
-        result = run_budget_review(user_path, example_prompt)
-        generated_at = datetime.utcnow()
-        timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
-        output_file = outputs_dir / f"budget_agent_result_{timestamp}.md"
-        final_reply = extract_final_reply(result).strip()
-        trace_block = format_tool_trace(result.get("messages", []))
-        with output_file.open("w", encoding="utf-8") as handle:
-            handle.write("# Budget Analysis Report\n\n")
-            handle.write(f"- **Generated on:** {generated_at.isoformat()}Z\n")
-            handle.write(f"- **Statement reviewed:** {Path(user_path).expanduser().resolve()}\n")
-            handle.write(f"- **Guidance prompt:** {example_prompt}\n\n")
-            handle.write("## Summary\n\n")
-            handle.write(final_reply or "_No response returned._")
-            handle.write("\n\n## LLM Interaction Highlights\n\n")
-            if trace_block.strip():
-                handle.write(trace_block)
-                if not trace_block.endswith("\n"):
-                    handle.write("\n")
-            else:
-                handle.write("- No tool interactions were recorded.\n")
-        print(f"Analysis complete! Results saved to: {output_file}")
-    except Exception as exc:
-        logger.exception("main execution failed")
-        print(f"An error occurred while running the agent: {exc}")
+    while True:
+        print("What would you like to do next?")
+        print("  1) Run quick summary (default prompt)")
+        print("  2) Run custom analysis (you supply instructions)")
+        print("  3) Change statement path")
+        print("  4) Exit")
+        choice = input("Select an option (1-4): ").strip().lower()
+        if choice in {"1", "a"}:
+            _run_analysis_flow(statement_path, example_prompt, outputs_dir)
+        elif choice in {"2", "b"}:
+            custom_prompt = input(
+                "Enter the instructions you want the agent to follow: "
+            ).strip()
+            if not custom_prompt:
+                print("Custom instructions cannot be empty. Please try again.\n")
+                continue
+            _run_analysis_flow(statement_path, custom_prompt, outputs_dir)
+        elif choice in {"3", "c"}:
+            statement_path = _prompt_statement_path(default_statement)
+        elif choice in {"4", "q", "quit", "exit"}:
+            print("Goodbye!")
+            break
+        else:
+            print("Unrecognized option. Please choose 1, 2, 3, or 4.\n")
 
 
 if __name__ == "__main__":
