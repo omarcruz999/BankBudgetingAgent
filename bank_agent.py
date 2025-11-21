@@ -15,6 +15,7 @@ import logging
 import os
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -107,6 +108,34 @@ def _summarize_by_category(transactions: Iterable[Transaction]) -> Dict[str, Dic
     return summary
 
 
+def _build_spending_overview(statement_path: Path) -> Dict[str, Any]:
+    """Return structured spending summary metrics for the statement path."""
+
+    transactions = _parse_statement(statement_path)
+    total_income = sum(tx.amount for tx in transactions if tx.is_income)
+    total_expense = sum(-tx.amount for tx in transactions if tx.is_expense)
+    net = total_income - total_expense
+    category_summary = _summarize_by_category(transactions)
+    daily_totals: Dict[str, float] = {}
+    for tx in transactions:
+        daily_totals.setdefault(tx.date, 0.0)
+        daily_totals[tx.date] += tx.amount
+    average_daily_cash_flow = sum(daily_totals.values()) / max(len(daily_totals), 1)
+    return {
+        "total_income": round(total_income, 2),
+        "total_expense": round(total_expense, 2),
+        "net_savings": round(net, 2),
+        "average_daily_cash_flow": round(average_daily_cash_flow, 2),
+        "category_breakdown": {
+            cat: {
+                "income": round(values["income"], 2),
+                "expenses": round(values["expenses"], 2),
+            }
+            for cat, values in category_summary.items()
+        },
+    }
+
+
 @tool
 def load_statement(path: str) -> str:
     """Return the parsed transactions for the CSV statement at the given path."""
@@ -128,29 +157,7 @@ def spending_overview(path: str) -> str:
 
     try:
         statement_path = _resolve_path(path)
-        transactions = _parse_statement(statement_path)
-        total_income = sum(tx.amount for tx in transactions if tx.is_income)
-        total_expense = sum(-tx.amount for tx in transactions if tx.is_expense)
-        net = total_income - total_expense
-        category_summary = _summarize_by_category(transactions)
-        daily_totals: Dict[str, float] = {}
-        for tx in transactions:
-            daily_totals.setdefault(tx.date, 0.0)
-            daily_totals[tx.date] += tx.amount
-        average_daily_cash_flow = sum(daily_totals.values()) / max(len(daily_totals), 1)
-        summary = {
-            "total_income": round(total_income, 2),
-            "total_expense": round(total_expense, 2),
-            "net_savings": round(net, 2),
-            "average_daily_cash_flow": round(average_daily_cash_flow, 2),
-            "category_breakdown": {
-                cat: {
-                    "income": round(values["income"], 2),
-                    "expenses": round(values["expenses"], 2),
-                }
-                for cat, values in category_summary.items()
-            },
-        }
+        summary = _build_spending_overview(statement_path)
         logger.info("Computed spending overview for %s", statement_path)
         return json.dumps(summary)
     except Exception as exc:
@@ -167,10 +174,7 @@ def export_budget_report(path: str, output_path: str, confirm: str = "no") -> st
     try:
         statement_path = _resolve_path(path)
         transactions = _parse_statement(statement_path)
-        overview_raw = json.loads(spending_overview(path))
-        if isinstance(overview_raw, dict) and overview_raw.get("error"):
-            return f"Unable to create report: {overview_raw['error']}"
-        summary = overview_raw
+        summary = _build_spending_overview(statement_path)
         output = Path(output_path).expanduser().resolve()
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("w", encoding="utf-8") as handle:
@@ -400,36 +404,227 @@ def _prompt_statement_path(default_statement: Path) -> str:
             print(f"Invalid statement path: {exc}\nPlease try again.\n")
 
 
-def _generate_markdown_report(
-    statement_path: str, instructions: str, outputs_dir: Path
-) -> Path:
-    """Run the agent and write its response/trace to a Markdown report."""
+def _format_summary_html(text: str) -> str:
+        """Convert the agent's natural-language reply into sanitized HTML."""
 
-    result = run_budget_review(statement_path, instructions)
-    generated_at = datetime.utcnow()
-    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
-    output_file = outputs_dir / f"budget_agent_result_{timestamp}.md"
-    final_reply = extract_final_reply(result).strip()
-    trace_block = format_tool_trace(result.get("messages", []))
-    outputs_dir.mkdir(parents=True, exist_ok=True)
-    with output_file.open("w", encoding="utf-8") as handle:
-        handle.write("# Budget Analysis Report\n\n")
-        handle.write(f"- **Generated on:** {generated_at.isoformat()}Z\n")
-        handle.write(
-            "- **Statement reviewed:** "
-            f"{Path(statement_path).expanduser().resolve()}\n"
+        cleaned = text.strip()
+        if not cleaned:
+                return "<p><em>No response returned.</em></p>"
+        paragraphs = [block.strip() for block in cleaned.split("\n\n") if block.strip()]
+        html_blocks: List[str] = []
+        for block in paragraphs:
+                escaped = escape(block).replace("\n", "<br />")
+                html_blocks.append(f"<p>{escaped}</p>")
+        return "".join(html_blocks)
+
+
+def _format_trace_html(trace: str) -> str:
+        """Convert the textual trace into nested list markup for readability."""
+
+        trimmed = trace.strip()
+        if not trimmed:
+                return "<p>No tool interactions were recorded.</p>"
+        items = []
+        current: Dict[str, List[str]] | None = None
+        for line in trimmed.splitlines():
+                if line.startswith("- "):
+                        if current:
+                                items.append(current)
+                        title = line[2:].strip().replace("**", "")
+                        current = {"title": title, "details": []}
+                elif line.startswith("  ") and current:
+                        detail = line.strip().replace("**", "")
+                        current["details"].append(detail)
+        if current:
+                items.append(current)
+        if not items:
+                escaped = escape(trimmed)
+                return f"<pre class=\"trace-block\">{escaped}</pre>"
+        html_lines = ["<ul class=\"trace-list\">"]
+        for item in items:
+                html_lines.append("<li>")
+                html_lines.append(f"<div class=\"trace-title\">{escape(item['title'])}</div>")
+                if item["details"]:
+                        html_lines.append("<ul class=\"trace-details\">")
+                        for detail in item["details"]:
+                                html_lines.append(f"<li>{escape(detail)}</li>")
+                        html_lines.append("</ul>")
+                html_lines.append("</li>")
+        html_lines.append("</ul>")
+        return "".join(html_lines)
+
+
+def _build_html_document(
+        generated_at: datetime,
+        statement_path: str,
+        instructions: str,
+        summary_html: str,
+        trace_html: str,
+) -> str:
+        """Construct a polished standalone HTML document for the report."""
+
+        metadata_rows = "".join(
+                [
+                        f"<tr><th>Generated</th><td>{escape(generated_at.isoformat())}Z</td></tr>",
+                        "<tr><th>Statement</th><td>"
+                        f"{escape(str(Path(statement_path).expanduser().resolve()))}</td></tr>",
+                        f"<tr><th>Instructions</th><td>{escape(instructions)}</td></tr>",
+                ]
         )
-        handle.write(f"- **Guidance prompt:** {instructions}\n\n")
-        handle.write("## Summary\n\n")
-        handle.write(final_reply or "_No response returned._")
-        handle.write("\n\n## LLM Interaction Highlights\n\n")
-        if trace_block.strip():
-            handle.write(trace_block)
-            if not trace_block.endswith("\n"):
-                handle.write("\n")
-        else:
-            handle.write("- No tool interactions were recorded.\n")
-    return output_file
+        return f"""<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+    <title>Budget Analysis Report</title>
+    <style>
+        :root {{
+            color-scheme: light dark;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --accent: #0062ff;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-muted: #475467;
+            --border: #d0d5dd;
+        }}
+        body {{
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: #0f172a;
+        }}
+        header {{
+            background: linear-gradient(135deg, var(--accent), #00b0ff);
+            color: white;
+            padding: 2.5rem 3rem;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.2);
+        }}
+        header h1 {{
+            margin: 0 0 0.5rem;
+            font-size: 2rem;
+            letter-spacing: 0.02em;
+        }}
+        header p {{
+            margin: 0;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.85);
+        }}
+        main {{
+            max-width: 960px;
+            margin: -2rem auto 3rem;
+            padding: 0 1.5rem;
+        }}
+        section {{
+            background: var(--card);
+            border-radius: 18px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }}
+        h2 {{
+            margin-top: 0;
+            color: #0f172a;
+        }}
+        table.meta {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }}
+        table.meta th {{
+            text-align: left;
+            width: 25%;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.4rem 0;
+        }}
+        table.meta td {{
+            padding: 0.4rem 0;
+        }}
+        .summary p {{
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }}
+        .trace-list {{
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }}
+        .trace-list > li {{
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }}
+        .trace-title {{
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }}
+        .trace-details {{
+            list-style: disc;
+            margin: 0 0 0 1.5rem;
+            padding: 0;
+            color: var(--text-muted);
+        }}
+        .trace-details li {{
+            margin-bottom: 0.25rem;
+        }}
+        @media (max-width: 640px) {{
+            header {{ padding: 2rem 1.5rem; }}
+            main {{ padding: 0 1rem; }}
+            section {{ padding: 1.5rem; }}
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Budget Analysis Report</h1>
+        <p>Prepared by the Bank Statement Budgeting Agent</p>
+    </header>
+    <main>
+        <section>
+            <h2>Session Overview</h2>
+            <table class=\"meta\">
+                {metadata_rows}
+            </table>
+        </section>
+        <section class=\"summary\">
+            <h2>Executive Summary</h2>
+            {summary_html}
+        </section>
+        <section>
+            <h2>LLM Interaction Highlights</h2>
+            {trace_html}
+        </section>
+    </main>
+</body>
+</html>
+"""
+
+
+def _generate_html_report(
+        statement_path: str, instructions: str, outputs_dir: Path
+) -> Path:
+        """Run the agent and write its response/trace to a styled HTML report."""
+
+        result = run_budget_review(statement_path, instructions)
+        generated_at = datetime.utcnow()
+        timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+        output_file = outputs_dir / f"budget_agent_result_{timestamp}.html"
+        final_reply = extract_final_reply(result).strip()
+        trace_block = format_tool_trace(result.get("messages", []))
+        summary_html = _format_summary_html(final_reply)
+        trace_html = _format_trace_html(trace_block)
+        document = _build_html_document(
+                generated_at=generated_at,
+                statement_path=statement_path,
+                instructions=instructions,
+                summary_html=summary_html,
+                trace_html=trace_html,
+        )
+        outputs_dir.mkdir(parents=True, exist_ok=True)
+        with output_file.open("w", encoding="utf-8") as handle:
+                handle.write(document)
+        return output_file
 
 
 def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path) -> None:
@@ -437,7 +632,7 @@ def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path
 
     print("\nWorking on your budgeting analysis...\n")
     try:
-        report_path = _generate_markdown_report(statement_path, instructions, outputs_dir)
+        report_path = _generate_html_report(statement_path, instructions, outputs_dir)
         print(f"Analysis complete! Results saved to: {report_path}\n")
     except Exception as exc:
         logger.exception("Budget analysis run failed")

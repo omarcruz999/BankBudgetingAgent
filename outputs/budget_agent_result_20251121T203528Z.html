@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Budget Analysis Report</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --accent: #0062ff;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-muted: #475467;
+            --border: #d0d5dd;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: #0f172a;
+        }
+        header {
+            background: linear-gradient(135deg, var(--accent), #00b0ff);
+            color: white;
+            padding: 2.5rem 3rem;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.2);
+        }
+        header h1 {
+            margin: 0 0 0.5rem;
+            font-size: 2rem;
+            letter-spacing: 0.02em;
+        }
+        header p {
+            margin: 0;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.85);
+        }
+        main {
+            max-width: 960px;
+            margin: -2rem auto 3rem;
+            padding: 0 1.5rem;
+        }
+        section {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        h2 {
+            margin-top: 0;
+            color: #0f172a;
+        }
+        table.meta {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        table.meta th {
+            text-align: left;
+            width: 25%;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.4rem 0;
+        }
+        table.meta td {
+            padding: 0.4rem 0;
+        }
+        .summary p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .trace-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .trace-list > li {
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        .trace-title {
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+        .trace-details {
+            list-style: disc;
+            margin: 0 0 0 1.5rem;
+            padding: 0;
+            color: var(--text-muted);
+        }
+        .trace-details li {
+            margin-bottom: 0.25rem;
+        }
+        @media (max-width: 640px) {
+            header { padding: 2rem 1.5rem; }
+            main { padding: 0 1rem; }
+            section { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Budget Analysis Report</h1>
+        <p>Prepared by the Bank Statement Budgeting Agent</p>
+    </header>
+    <main>
+        <section>
+            <h2>Session Overview</h2>
+            <table class="meta">
+                <tr><th>Generated</th><td>2025-11-21T20:35:28.566221Z</td></tr><tr><th>Statement</th><td>C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv</td></tr><tr><th>Instructions</th><td>Summarize overall income vs expenses, highlight any category exceeding $500, call out the five largest expenses, describe spending trends you notice, and provide three actionable budgeting recommendations. Format amounts in USD and deliver a detailed narrative without asking follow-up questions.</td></tr>
+            </table>
+        </section>
+        <section class="summary">
+            <h2>Executive Summary</h2>
+            <p>## Budget Analysis Report: September 2025</p><p>This report provides a comprehensive analysis of your spending habits for September 2025, based on the provided bank statement. The aim is to offer insights into your financial health, highlight areas for improvement, and suggest actionable strategies to optimize your budget.</p><p>### High-Level Financial Overview</p><p>Your total income for September was **$5,078.05 USD**, while your total expenses amounted to **$5,526.03 USD**. This results in a net deficit of **-$447.98 USD** for the month, indicating that your expenditures exceeded your income. Your average daily cash flow was -$14.93 USD.</p><p>### Category-Level Insights</p><p>Here&#x27;s a breakdown of your spending by category, highlighting any categories that exceeded your $500 threshold:</p><p>*   **Housing:** $1,500.00 USD (Exceeded threshold) - This is your largest expense, primarily due to your rent payment.<br />*   **Transport:** $560.17 USD (Exceeded threshold) - This category includes bus passes, gas, parking, car maintenance, and public transit.<br />*   **Savings:** $850.00 USD (Exceeded threshold) - While an expense, this represents money allocated to savings, which is a positive financial habit.<br />*   **Utilities:** $279.93 USD<br />*   **Groceries:** $299.83 USD<br />*   **Home Improvement:** $332.36 USD<br />*   **Insurance:** $233.00 USD<br />*   **Education:** $216.60 USD<br />*   **Entertainment:** $221.34 USD<br />*   **Family:** $210.00 USD<br />*   **Food &amp; Drink:** $162.50 USD<br />*   **Pet Care:** $156.99 USD<br />*   **Personal Care:** $115.00 USD<br />*   **Work Expenses:** $119.75 USD<br />*   **Fitness:** $104.99 USD<br />*   **Charity:** $100.00 USD<br />*   **Health:** $63.57 USD</p><p>### Notable Transactions: The Five Largest Expenses</p><p>Understanding your largest expenditures can provide immediate opportunities for savings. Here are your top five expenses for September:</p><p>1.  **$1,500.00 USD** - Rent Payment (Housing)<br />2.  **$450.00 USD** - End-of-Month Savings (Savings)<br />3.  **$400.00 USD** - Savings Transfer (Savings)<br />4.  **$325.90 USD** - Car Maintenance (Transport)<br />5.  **$210.00 USD** - Home Repair Service (Home Improvement)</p><p>It&#x27;s important to note that two of your top five &quot;expenses&quot; are actually transfers to savings, which is a commendable practice for building financial security. However, the rent payment and car maintenance are significant outflows that warrant attention.</p><p>### Spending Trends</p><p>Several spending trends are evident from your statement:</p><p>*   **Consistent Income Streams:** You have a regular salary deposit, supplemented by freelance work, side gigs, and consulting retainers, indicating diverse income sources.<br />*   **High Fixed Costs:** Housing (rent) is a substantial fixed cost each month.<br />*   **Significant Savings Efforts:** You are actively saving, with two large transfers to savings accounts. This is a strong positive trend.<br />*   **Fluctuating Discretionary Spending:** Categories like &quot;Food &amp; Drink,&quot; &quot;Entertainment,&quot; and &quot;Personal Care&quot; show varied spending, suggesting opportunities for adjustment.<br />*   **Recurring Transportation Costs:** Regular expenses for bus passes, gas, and car maintenance indicate a reliance on personal and public transportation.<br />*   **Home-Related Expenses:** Beyond rent, there are notable expenses in &quot;Home Improvement&quot; and &quot;Utilities.&quot;</p><p>### Actionable Budgeting Recommendations</p><p>Based on your spending habits, here are three actionable strategies to help you save more and improve your financial standing:</p><p>1.  **Review and Optimize Transportation Costs:** Your &quot;Transport&quot; category is a significant expense, exceeding $500. Analyze your car maintenance costs and daily commute. Could you explore more cost-effective transportation alternatives for certain trips, such as cycling or carpooling? Consider a detailed review of your car maintenance schedule to ensure you&#x27;re not overspending on non-essential services. For example, if you have multiple gas fill-ups, try to consolidate trips or explore gas-saving driving habits.</p><p>2.  **Identify and Reduce Discretionary Spending:** While your &quot;Food &amp; Drink&quot; and &quot;Entertainment&quot; categories are not individually above the $500 threshold, their combined total and the frequency of transactions suggest room for optimization. For instance, &quot;Restaurant Night Out&quot; ($62.47 USD), &quot;Lunch with Colleagues&quot; ($27.45 USD), and &quot;Restaurant Brunch&quot; ($48.33 USD) are recurring. Try setting a weekly or bi-weekly budget for dining out and explore more home-cooked meals. Similarly, review your entertainment subscriptions and activities to see if any can be reduced or replaced with free/lower-cost alternatives.</p><p>3.  **Create a Buffer for Unexpected Expenses:** Your current net deficit of -$447.98 USD indicates that your expenses are slightly outpacing your income. While you are making significant contributions to savings, it&#x27;s crucial to ensure your monthly operational budget is balanced. Consider re-evaluating your &quot;Savings&quot; transfers temporarily if necessary, or actively seek to reduce spending in other flexible categories until your income consistently exceeds your expenses. Building a small monthly buffer will prevent you from dipping into savings for regular expenditures and help you achieve a positive cash flow.</p><p>This report provides a foundation for understanding and improving your financial habits. By implementing these recommendations, you can work towards a more balanced budget and stronger financial health.</p>
+        </section>
+        <section>
+            <h2>LLM Interaction Highlights</h2>
+            <ul class="trace-list"><li><div class="trace-title">User request: You are auditing the bank statement located at: C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv. Follow best budgeting practices and present a thorough report covering high-level metrics, category-level insights, notable transactions, and tailored budgeting actions. Additional instructions: Summarize overall income vs expenses, highlight any category exceeding $500, call out the five largest expenses, describe spending trends you notice, and provide three actionable budgeting recommendations. Format amounts in USD and deliver a detailed narrative without asking follow-up questions.</div></li><li><div class="trace-title">Assistant called `spending_overview`: Args: path=C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv</div><ul class="trace-details"><li>Result: Spending summary → Income $5078.05, Expenses $5526.03, Net $-447.98, Average daily cash flow $-14.93</li></ul></li><li><div class="trace-title">Assistant called `load_statement`: Args: path=C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv</div><ul class="trace-details"><li>Result: Loaded 59 transactions: 2025-09-01 – Salary Deposit (3200.0), 2025-09-02 – Rent Payment (-1500.0), 2025-09-02 – Grocery Run Aisle 5 (-124.58), … 56 more</li></ul></li><li><div class="trace-title">Assistant called `export_budget_report`: Args: confirm=yes, output_path=budget_report.pdf, path=C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv</div><ul class="trace-details"><li>Result: Budget report written to C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\budget_report.pdf</li></ul></li><li><div class="trace-title">Assistant draft: ## Budget Analysis Report: September 2025</div></li></ul>
+        </section>
+    </main>
+</body>
+</html>

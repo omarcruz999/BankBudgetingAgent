@@ -1,0 +1,99 @@
+Budget Report
+Generated: 2025-11-21T20:35:20.189829Z
+Source statement: C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
+
+{
+  "total_income": 5078.05,
+  "total_expense": 5526.03,
+  "net_savings": -447.98,
+  "average_daily_cash_flow": -14.93,
+  "category_breakdown": {
+    "Income": {
+      "income": 4840.0,
+      "expenses": 0.0
+    },
+    "Housing": {
+      "income": 0.0,
+      "expenses": 1500.0
+    },
+    "Groceries": {
+      "income": 0.0,
+      "expenses": 299.83
+    },
+    "Food & Drink": {
+      "income": 0.0,
+      "expenses": 162.5
+    },
+    "Transport": {
+      "income": 0.0,
+      "expenses": 560.17
+    },
+    "Utilities": {
+      "income": 0.0,
+      "expenses": 279.93
+    },
+    "Entertainment": {
+      "income": 0.0,
+      "expenses": 221.34
+    },
+    "Health": {
+      "income": 0.0,
+      "expenses": 63.57
+    },
+    "Fitness": {
+      "income": 0.0,
+      "expenses": 104.99
+    },
+    "Charity": {
+      "income": 0.0,
+      "expenses": 100.0
+    },
+    "Education": {
+      "income": 0.0,
+      "expenses": 216.6
+    },
+    "Home Improvement": {
+      "income": 0.0,
+      "expenses": 332.36
+    },
+    "Insurance": {
+      "income": 0.0,
+      "expenses": 233.0
+    },
+    "Personal Care": {
+      "income": 0.0,
+      "expenses": 115.0
+    },
+    "Investment Income": {
+      "income": 58.05,
+      "expenses": 0.0
+    },
+    "Pet Care": {
+      "income": 0.0,
+      "expenses": 156.99
+    },
+    "Savings": {
+      "income": 0.0,
+      "expenses": 850.0
+    },
+    "Work Expenses": {
+      "income": 0.0,
+      "expenses": 119.75
+    },
+    "Family": {
+      "income": 0.0,
+      "expenses": 210.0
+    },
+    "Side Business": {
+      "income": 180.0,
+      "expenses": 0.0
+    }
+  }
+}
+
+Top transactions:
+- 2025-09-01 | Salary Deposit | Income | 3200.00
+- 2025-09-02 | Rent Payment | Housing | -1500.00
+- 2025-09-06 | Freelance Invoice | Income | 650.00
+- 2025-09-20 | Consulting Retainer | Income | 500.00
+- 2025-09-30 | End-of-Month Savings | Savings | -450.00
