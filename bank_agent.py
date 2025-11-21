@@ -324,45 +324,36 @@ def format_tool_trace(messages: List[BaseMessage]) -> str:
     tool_events_by_id: Dict[str, Dict[str, Any]] = {}
     for msg in messages:
         if isinstance(msg, HumanMessage):
-            text = _shorten_paths_in_text(_coerce_message_text(msg.content).strip())
-            events.append(
-                {
-                    "label": "User request",
-                    "details": [text],
-                }
-            )
+            text = _coerce_message_text(msg.content).strip()
+            event = {"label": "User instructions", "details": []}
+            _add_trace_sentence(event, text, 260)
+            if event["details"]:
+                events.append(event)
         elif isinstance(msg, AIMessage):
             if msg.tool_calls:
                 for call in msg.tool_calls:
                     args = call.get("args", {})
-                    label = _shorten_paths_in_text(
-                        f"Assistant called `{call['name']}`"
-                    )
-                    detail = _shorten_paths_in_text(f"Args: {_summarize_args(args)}")
-                    event = {"label": label, "details": [detail]}
+                    label = f"Tool call: {call['name']}"
+                    event = {"label": label, "details": []}
+                    _add_trace_sentence(event, f"Args -> {_summarize_args(args)}")
                     events.append(event)
                     call_id = call.get("id")
                     if call_id:
                         tool_events_by_id[str(call_id)] = event
             elif msg.content:
-                draft = _shorten_paths_in_text(_coerce_message_text(msg.content).strip())
-                events.append(
-                    {
-                        "label": "Assistant draft",
-                        "details": [draft],
-                    }
-                )
+                event = {"label": "Assistant response", "details": []}
+                _add_trace_sentence(event, _coerce_message_text(msg.content).strip())
+                if event["details"]:
+                    events.append(event)
         elif isinstance(msg, ToolMessage):
-            summary = _shorten_paths_in_text(_summarize_tool_response(msg.name, msg.content))
+            summary = _summarize_tool_response(msg.name, msg.content)
             if msg.tool_call_id and msg.tool_call_id in tool_events_by_id:
-                tool_events_by_id[msg.tool_call_id]["details"].append(f"Result: {summary}")
+                _add_trace_sentence(tool_events_by_id[msg.tool_call_id], f"Result -> {summary}")
             else:
-                events.append(
-                    {
-                        "label": f"Tool `{msg.name}` result",
-                        "details": [summary],
-                    }
-                )
+                event = {"label": f"Tool result: {msg.name}", "details": []}
+                _add_trace_sentence(event, summary)
+                if event["details"]:
+                    events.append(event)
 
     lines: List[str] = []
     for event in events:
@@ -420,13 +411,60 @@ _WORKSPACE_REPLACEMENTS = [
 ]
 
 
+def _to_workspace_relative(path_str: str) -> str:
+    if not path_str:
+        return path_str
+    candidate = Path(path_str.strip().strip('"'))
+    try:
+        resolved = candidate.expanduser().resolve()
+    except (OSError, RuntimeError):
+        return path_str
+    try:
+        return resolved.relative_to(ROOT_DIR).as_posix()
+    except ValueError:
+        return path_str
+
+
 def _shorten_paths_in_text(text: str) -> str:
     if not text:
         return text
     result = text
     for marker in _WORKSPACE_REPLACEMENTS:
-        result = result.replace(marker, ".")
+        result = result.replace(f"{marker}\\", "")
+        result = result.replace(f"{marker}/", "")
+        result = result.replace(marker, "")
+    result = result.replace(".\\", "")
+    result = result.replace("./", "")
+    result = result.replace("\\\\", "\\")
+    result = result.replace("\\", "/")
+    while "//" in result:
+        result = result.replace("//", "/")
     return result
+
+
+def _collapse_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _clean_trace_text(text: str, limit: int = 240) -> str:
+    if not text:
+        return ""
+    cleaned = _collapse_whitespace(_shorten_paths_in_text(text))
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: limit - 1].rstrip() + "..."
+
+
+def _add_trace_sentence(event: Dict[str, Any], text: str, limit: int = 200) -> None:
+    if not text:
+        return
+    cleaned = _clean_trace_text(text, limit)
+    if not cleaned:
+        return
+    details = event.setdefault("details", [])
+    if len(details) >= 2:
+        return
+    details.append(cleaned)
 
 
 def _apply_basic_formatting(segment: str) -> str:
@@ -476,13 +514,13 @@ def _format_summary_html(text: str) -> str:
         if not stripped:
             close_list()
             continue
-        if stripped.startswith("### "):
+        heading_match = re.match(r"^(#{1,6})\s+(.*)", stripped)
+        if heading_match:
             close_list()
-            html_parts.append(f"<h3>{_format_inline_html(stripped[4:])}</h3>")
-            continue
-        if stripped.startswith("## "):
-            close_list()
-            html_parts.append(f"<h3>{_format_inline_html(stripped[3:])}</h3>")
+            level = len(heading_match.group(1))
+            content = heading_match.group(2)
+            tag = "h3" if level <= 3 else "h4"
+            html_parts.append(f"<{tag}>{_format_inline_html(content)}</{tag}>")
             continue
         if stripped.startswith(('- ', '* ')):
             if list_type != "ul":
@@ -562,9 +600,9 @@ def _extract_export_path(messages: List[BaseMessage]) -> Optional[str]:
             text = _coerce_message_text(msg.content).strip()
             match = re.search(r"Budget report written to (.+)", text)
             if match:
-                return match.group(1).strip()
+                return _to_workspace_relative(match.group(1).strip())
             if text:
-                return text
+                return _to_workspace_relative(text)
     return None
 
 
@@ -584,8 +622,9 @@ def _build_html_document(
         f"<tr><th>Instructions</th><td>{escape(instructions)}</td></tr>",
     ]
     if export_path:
+        relative = _to_workspace_relative(export_path)
         rows.append(
-            f"<tr><th>Exported PDF</th><td><code>{escape(export_path)}</code></td></tr>"
+            f"<tr><th>Exported PDF</th><td><code>{escape(relative)}</code></td></tr>"
         )
     metadata_rows = "".join(rows)
     return f"""<!DOCTYPE html>
@@ -670,12 +709,16 @@ def _build_html_document(
       margin: 0 0 1.1rem 1.5rem;
       padding: 0;
     }}
-    .trace-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1rem;
-    }}
+        .trace-grid {{
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }}
     .trace-card {{
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            align-items: flex-start;
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.25rem;
@@ -684,16 +727,19 @@ def _build_html_document(
     }}
     .trace-card__title {{
       font-weight: 600;
-      margin-bottom: 0.6rem;
-      color: var(--accent);
+            margin-bottom: 0;
+            color: var(--accent);
+            min-width: 210px;
     }}
     .trace-card__details {{
-      margin: 0;
-      padding-left: 1.2rem;
+            flex: 1;
+            margin: 0;
+            padding-left: 0;
       color: var(--muted);
+            list-style: none;
     }}
         .trace-card__details li {{
-            margin-bottom: 0.35rem;
+                        margin-bottom: 0.35rem;
             word-break: break-word;
             overflow-wrap: anywhere;
         }}
@@ -748,7 +794,7 @@ def _generate_html_report(
     output_file = outputs_dir / f"budget_agent_result_{timestamp}.html"
     final_reply = extract_final_reply(result).strip()
     trace_block = format_tool_trace(result.get("messages", []))
-    summary_html = _format_summary_html(final_reply)
+    summary_html = _format_summary_html(_shorten_paths_in_text(final_reply))
     trace_html = _format_trace_html(trace_block)
     export_path = _extract_export_path(result.get("messages", []))
     document = _build_html_document(
