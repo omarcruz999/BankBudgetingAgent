@@ -15,7 +15,7 @@ highlight spending patterns, and generate actionable recommendations.
 - **Safety checks** on file paths, CSV schema validation, and logging of every
   agent interaction for traceability.
 - **CLI workflow** that accepts a user-provided statement path (or falls back to
-  a sample) and writes Markdown reports under `outputs/`.
+  a sample) and writes polished HTML reports under `outputs/`.
 - **Sample datasets** in `samples/` including a compact statement
   (`sample_statement.csv`) and an extended 50-transaction statement
   (`sample_statement_large.csv`).
@@ -65,10 +65,10 @@ pip install langchain langchain-google-genai python-dotenv
   - Option 3 allows you to switch to a different statement path without
     restarting the program.
   - Option 4 exits.
-5. Each analysis run displays progress in the terminal and writes a Markdown
-  report to the `outputs/` folder (e.g., `outputs/budget_agent_result_<timestamp>.md`).
-6. Open the generated report in your editor or viewer of choice to read the
-  narrative summary and LLM interaction trace.
+5. Each analysis run displays progress in the terminal and writes a styled HTML
+  report to the `outputs/` folder (e.g., `outputs/budget_agent_result_<timestamp>.html`).
+6. Open the generated report in your browser to read the narrative summary and
+  LLM interaction trace.
 
 ## Project Structure
 
@@ -78,7 +78,7 @@ pip install langchain langchain-google-genai python-dotenv
 ├── samples/
 │   ├── sample_statement.csv
 │   └── sample_statement_large.csv
-├── outputs/                   # Generated Markdown reports (created at runtime)
+├── outputs/                   # Generated HTML reports (created at runtime)
 └── README.md
 ```
 
