@@ -1,8 +1,0 @@
-2025-11-21 12:35:12,494 [INFO] Loaded 59 transactions from C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
-2025-11-21 12:35:12,495 [INFO] Computed spending overview for C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
-2025-11-21 12:35:12,495 [INFO] Loaded 59 transactions from C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
-2025-11-21 12:35:12,495 [INFO] Tool load_statement returned 59 transactions
-2025-11-21 12:35:20,188 [INFO] Loaded 59 transactions from C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
-2025-11-21 12:35:20,188 [INFO] Loaded 59 transactions from C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv
-2025-11-21 12:35:20,190 [INFO] export_budget_report wrote report to C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\budget_report.pdf
-2025-11-21 12:35:28,565 [INFO] Agent invocation completed for C:\Users\Omar\Desktop\GitHub Repos\BankBudgetingAgent\samples\sample_statement_large.csv

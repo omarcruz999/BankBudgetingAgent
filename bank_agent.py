@@ -212,12 +212,11 @@ def build_budget_agent() -> Any:
         "available tools, explain spending habits, highlight categories exceeding the "
         "user's thresholds, and suggest actionable strategies to save more. Always "
         "deliver a detailed, narrative report without asking for additional "
-        "confirmation steps. If exporting is required, call export_budget_report "
-        "directly with a suitable default path."
+        "confirmation steps."
     )
     return create_agent(
         model=llm,
-        tools=[load_statement, spending_overview, export_budget_report],
+        tools=[load_statement, spending_overview],
         system_prompt=system_prompt,
     )
 
@@ -293,16 +292,13 @@ def _summarize_tool_response(name: str, content: Any) -> str:
     if name == "load_statement":
         transactions = parsed.get("transactions", [])
         count = len(transactions)
-        preview_parts: List[str] = []
-        for tx in transactions[:3]:
-            date = tx.get("date", "?")
-            desc = tx.get("description", "Unknown")
-            amount = tx.get("amount", 0)
-            preview_parts.append(f"{date} – {desc} ({amount})")
-        preview = ", ".join(preview_parts)
-        if count > 3:
-            preview += f", … {count - 3} more"
-        return f"Loaded {count} transactions" + (f": {preview}" if preview else ".")
+        if transactions:
+            first = transactions[0]
+            date = first.get("date", "?")
+            desc = first.get("description", "Unknown")
+            amount = first.get("amount", 0)
+            return f"Loaded {count} transactions (first: {date} {desc} {amount})"
+        return f"Loaded {count} transactions."
     if name == "spending_overview":
         income = parsed.get("total_income")
         expenses = parsed.get("total_expense")
@@ -324,7 +320,7 @@ def format_tool_trace(messages: List[BaseMessage]) -> str:
     tool_events_by_id: Dict[str, Dict[str, Any]] = {}
     for msg in messages:
         if isinstance(msg, HumanMessage):
-            text = _coerce_message_text(msg.content).strip()
+            text = _first_sentences(_shorten_paths_in_text(_coerce_message_text(msg.content)), 2)
             event = {"label": "User instructions", "details": []}
             _add_trace_sentence(event, text, 260)
             if event["details"]:
@@ -342,7 +338,7 @@ def format_tool_trace(messages: List[BaseMessage]) -> str:
                         tool_events_by_id[str(call_id)] = event
             elif msg.content:
                 event = {"label": "Assistant response", "details": []}
-                _add_trace_sentence(event, _coerce_message_text(msg.content).strip())
+                _add_trace_sentence(event, "See above.", 260)
                 if event["details"]:
                     events.append(event)
         elif isinstance(msg, ToolMessage):
@@ -453,6 +449,41 @@ def _clean_trace_text(text: str, limit: int = 240) -> str:
     if len(cleaned) <= limit:
         return cleaned
     return cleaned[: limit - 1].rstrip() + "..."
+
+
+def _first_sentences(text: str, max_sentences: int = 1) -> str:
+    cleaned = text.strip()
+    if not cleaned:
+        return ""
+    parts = re.split(r"(?<=[.!?])\s+", cleaned)
+    return " ".join(parts[:max_sentences]).strip()
+
+
+def _extract_intro_sentence(text: str) -> str:
+    if not text:
+        return ""
+    shortened = _shorten_paths_in_text(text).replace("`", "")
+    lowered = shortened.lower()
+    variants = [
+        "here's a detailed audit of your bank statement from ",
+        "here is a detailed audit of your bank statement from ",
+        "here's a detailed budgeting report based on your bank statement from ",
+        "here is a detailed budgeting report based on your bank statement from ",
+    ]
+    start_index = -1
+    for variant in variants:
+        idx = lowered.find(variant)
+        if idx != -1:
+            start_index = idx
+            break
+    if start_index == -1:
+        return ""
+    end_index = shortened.find(".", start_index)
+    if end_index == -1:
+        sentence = shortened[start_index:].strip()
+    else:
+        sentence = shortened[start_index : end_index + 1].strip()
+    return sentence
 
 
 def _add_trace_sentence(event: Dict[str, Any], text: str, limit: int = 200) -> None:
@@ -701,6 +732,11 @@ def _build_html_document(
       color: var(--accent);
       font-size: 1.15rem;
     }}
+        .summary h4 {{
+            margin-bottom: 0.4rem;
+            color: var(--accent);
+            font-size: 1.05rem;
+        }}
     .summary p {{
       line-height: 1.7;
       margin-bottom: 1rem;
@@ -714,32 +750,33 @@ def _build_html_document(
             flex-direction: column;
             gap: 1.25rem;
         }}
-    .trace-card {{
+        .trace-card {{
             display: flex;
-            flex-direction: row;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 0.75rem;
             align-items: flex-start;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.25rem;
-      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-    }}
-    .trace-card__title {{
-      font-weight: 600;
-            margin-bottom: 0;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }}
+        .trace-card__title {{
+            font-weight: 600;
+            margin: 0;
             color: var(--accent);
-            min-width: 210px;
-    }}
-    .trace-card__details {{
-            flex: 1;
+        }}
+        .trace-card__details {{
+            width: 100%;
             margin: 0;
             padding-left: 0;
-      color: var(--muted);
+            color: var(--muted);
             list-style: none;
-    }}
+            font-size: 0.94rem;
+            line-height: 1.45;
+        }}
         .trace-card__details li {{
-                        margin-bottom: 0.35rem;
+            margin-bottom: 0.35rem;
             word-break: break-word;
             overflow-wrap: anywhere;
         }}
