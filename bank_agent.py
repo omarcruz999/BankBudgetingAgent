@@ -174,6 +174,78 @@ def spending_overview(path: str) -> str:
 
 
 @tool
+def compare_statements(primary_path: str, comparison_path: str) -> str:
+    """Compare two CSV statements and return category-level deltas."""
+
+    try:
+        primary_statement = _resolve_path(primary_path)
+        comparison_statement = _resolve_path(comparison_path)
+        primary_transactions = _parse_statement(primary_statement)
+        comparison_transactions = _parse_statement(comparison_statement)
+        primary_summary = _summarize_by_category(primary_transactions)
+        comparison_summary = _summarize_by_category(comparison_transactions)
+
+        def _totals(summary: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+            income_total = sum(values["income"] for values in summary.values())
+            expense_total = sum(values["expenses"] for values in summary.values())
+            return {
+                "income": round(income_total, 2),
+                "expenses": round(expense_total, 2),
+                "net": round(income_total - expense_total, 2),
+            }
+
+        primary_totals = _totals(primary_summary)
+        comparison_totals = _totals(comparison_summary)
+
+        category_deltas: List[Dict[str, float | str]] = []
+        for category in sorted(set(primary_summary) | set(comparison_summary)):
+            baseline = primary_summary.get(category, {"income": 0.0, "expenses": 0.0})
+            updated = comparison_summary.get(category, {"income": 0.0, "expenses": 0.0})
+            category_deltas.append(
+                {
+                    "category": category,
+                    "baseline_income": round(baseline["income"], 2),
+                    "baseline_expenses": round(baseline["expenses"], 2),
+                    "comparison_income": round(updated["income"], 2),
+                    "comparison_expenses": round(updated["expenses"], 2),
+                    "income_change": round(updated["income"] - baseline["income"], 2),
+                    "expense_change": round(updated["expenses"] - baseline["expenses"], 2),
+                }
+            )
+
+        response = {
+            "primary": {
+                "path": str(primary_statement),
+                "totals": primary_totals,
+            },
+            "comparison": {
+                "path": str(comparison_statement),
+                "totals": comparison_totals,
+            },
+            "difference": {
+                "income_change": round(
+                    comparison_totals["income"] - primary_totals["income"], 2
+                ),
+                "expense_change": round(
+                    comparison_totals["expenses"] - primary_totals["expenses"], 2
+                ),
+                "net_change": round(
+                    comparison_totals["net"] - primary_totals["net"], 2
+                ),
+            },
+            "category_deltas": category_deltas,
+        }
+
+        logger.info(
+            "compare_statements analyzed %s vs %s", primary_statement, comparison_statement
+        )
+        return json.dumps(response)
+    except Exception as exc:
+        logger.exception("compare_statements failed")
+        return json.dumps({"error": str(exc)})
+
+
+@tool
 def export_budget_report(path: str, output_path: str, confirm: str = "no") -> str:
     """Export a budgeting report to disk after explicit confirmation ('yes')."""
 
@@ -222,7 +294,7 @@ def build_budget_agent(system_prompt: Optional[str] = None) -> Any:
     )
     return create_agent(
         model=llm,
-        tools=[load_statement, spending_overview],
+        tools=[load_statement, spending_overview, compare_statements],
         system_prompt=system_prompt or default_prompt,
     )
 
@@ -438,6 +510,44 @@ def run_subscription_detection(statement_path: str, instructions: Optional[str] 
     )
     result = invoke_agent(agent, combined_prompt)
     logger.info("Subscription detection completed for %s", statement_path)
+    return result
+
+
+def run_statement_comparison(
+    primary_statement_path: str, comparison_statement_path: str, instructions: Optional[str] = None
+) -> Dict[str, Any]:
+    """Compare two statements and summarize key differences."""
+
+    comparison_system_prompt = (
+        "You are a financial analyst comparing two bank statements. Use the "
+        "available tools to load each statement and call compare_statements to "
+        "obtain structured deltas. Produce a clear narrative highlighting where "
+        "spending and income increased or decreased, quantify the top category "
+        "changes, and explain the overall impact on net savings. Suggest one or two "
+        "practical follow-up actions."
+    )
+    agent = build_budget_agent(system_prompt=comparison_system_prompt)
+    default_instructions = (
+        "Focus on the five largest expense swings, note any new or discontinued "
+        "subscriptions, and summarize the total change in income, expenses, and net "
+        "savings between the two periods."
+    )
+    combined_prompt = (
+        "The primary bank statement is located at: "
+        f"{primary_statement_path}. "
+        "The comparison bank statement is located at: "
+        f"{comparison_statement_path}. "
+        "Use load_statement on each path and call compare_statements with both "
+        "paths before drafting your answer. Report amounts in USD with appropriate "
+        "signs (prefix expenses with a minus if needed). "
+        f"Additional instructions: {instructions or default_instructions}"
+    )
+    result = invoke_agent(agent, combined_prompt)
+    logger.info(
+        "Statement comparison completed for %s vs %s",
+        primary_statement_path,
+        comparison_statement_path,
+    )
     return result
 
 
@@ -1032,18 +1142,89 @@ def _run_subscription_detection_flow(statement_path: str, instructions: Optional
         print(f"An error occurred while detecting subscriptions: {exc}\n")
 
 
+def _run_statement_comparison_flow(
+    _: str,
+    default_primary: Path,
+    default_comparison: Path,
+) -> None:
+    """Compare two statements and display the agent's narrative."""
+
+    print("\nComparing statements...\n")
+    primary_default_display = _to_workspace_relative(str(default_primary))
+    comparison_default_display = _to_workspace_relative(str(default_comparison))
+
+    while True:
+        primary_prompt = (
+            "Enter the path to the primary CSV "
+            f"(press Enter for sample: {primary_default_display}): "
+        )
+        user_input = input(primary_prompt).strip()
+        if not user_input:
+            candidate = str(default_primary)
+        else:
+            candidate = user_input
+        try:
+            primary_path = _resolve_path(candidate)
+            break
+        except Exception as exc:
+            print(f"Invalid primary path: {exc}\nPlease try again.\n")
+
+    while True:
+        comparison_prompt = (
+            "Enter the path to the comparison CSV "
+            f"(press Enter for sample: {comparison_default_display}): "
+        )
+        user_input = input(comparison_prompt).strip()
+        if not user_input:
+            candidate = str(default_comparison)
+        else:
+            candidate = user_input
+        try:
+            comparison_path = _resolve_path(candidate)
+            break
+        except Exception as exc:
+            print(f"Invalid comparison path: {exc}\nPlease try again.\n")
+
+    custom_instructions = input(
+        "Enter additional comparison guidance (press Enter for default focus): "
+    ).strip()
+    instructions = custom_instructions or None
+
+    try:
+        result = run_statement_comparison(
+            str(primary_path), str(comparison_path), instructions
+        )
+        reply = extract_final_reply(result).strip()
+        if reply:
+            _render_cli_output("Comparison", reply)
+        else:
+            print("The agent did not return a response.\n")
+        trace = format_tool_trace(result.get("messages", []))
+        if trace:
+            show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
+            if show_trace in {"y", "yes"}:
+                print("\nTool trace:\n--------------------------------------------------")
+                print(trace + "\n")
+    except Exception as exc:
+        logger.exception("Statement comparison failed")
+        print(f"An error occurred while comparing statements: {exc}\n")
+
+
 def main() -> None:
     """Interactive CLI entry point with multiple analysis options."""
 
     workspace = Path(__file__).parent
     default_statement = workspace / "samples" / "sample_statement_large.csv"
+    comparison_sample_statement = workspace / "samples" / "sample_statement_next_month.csv"
     outputs_dir = workspace / "outputs"
     print("Bank Statement Budgeting Agent")
     print("--------------------------------------------------")
     sample_dir_display = _to_workspace_relative(str(default_statement.parent))
     default_sample_display = _to_workspace_relative(str(default_statement))
+    comparison_sample_display = _to_workspace_relative(str(comparison_sample_statement))
     print(f"Sample statements available under: {sample_dir_display}")
     print(f" - Default sample: {default_sample_display}")
+    print(f" - Comparison sample: {comparison_sample_display}")
     statement_path = _prompt_statement_path(default_statement)
     example_prompt = (
         "Summarize overall income vs expenses, highlight any category exceeding $500, "
@@ -1057,9 +1238,10 @@ def main() -> None:
         print("  2) Run custom analysis (you supply instructions)")
         print("  3) Find transactions (keyword query)")
         print("  4) Detect subscriptions")
-        print("  5) Change statement path")
-        print("  6) Exit")
-        choice = input("Select an option (1-6): ").strip().lower()
+        print("  5) Compare two statements")
+        print("  6) Change statement path")
+        print("  7) Exit")
+        choice = input("Select an option (1-7): ").strip().lower()
         if choice in {"1", "a"}:
             _run_analysis_flow(statement_path, example_prompt, outputs_dir)
         elif choice in {"2", "b"}:
@@ -1082,13 +1264,19 @@ def main() -> None:
             ).strip()
             instructions = custom_instructions or None
             _run_subscription_detection_flow(statement_path, instructions)
-        elif choice in {"5", "c", "change"}:
+        elif choice in {"5", "compare", "comparison", "compare statements"}:
+            _run_statement_comparison_flow(
+                statement_path,
+                default_statement,
+                comparison_sample_statement,
+            )
+        elif choice in {"6", "c", "change"}:
             statement_path = _prompt_statement_path(default_statement)
-        elif choice in {"6", "q", "quit", "exit"}:
+        elif choice in {"7", "q", "quit", "exit"}:
             print("Goodbye!")
             break
         else:
-            print("Unrecognized option. Please choose 1, 2, 3, 4, 5, or 6.\n")
+            print("Unrecognized option. Please choose 1, 2, 3, 4, 5, 6, or 7.\n")
 
 
 if __name__ == "__main__":
