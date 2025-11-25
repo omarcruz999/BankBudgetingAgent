@@ -196,7 +196,7 @@ def export_budget_report(path: str, output_path: str, confirm: str = "no") -> st
         return str(exc)
 
 
-def build_budget_agent() -> Any:
+def build_budget_agent(system_prompt: Optional[str] = None) -> Any:
     """Instantiate the LangChain agent wired with budgeting tools."""
 
     api_key = os.environ.get("GOOGLE_API_KEY", "USE_YOUR_API_KEY")
@@ -207,7 +207,7 @@ def build_budget_agent() -> Any:
         temperature=0,
         google_api_key=api_key,
     )
-    system_prompt = (
+    default_prompt = (
         "You are a budgeting analyst. Read the user's bank statement using the "
         "available tools, explain spending habits, highlight categories exceeding the "
         "user's thresholds, and suggest actionable strategies to save more. Always "
@@ -217,7 +217,7 @@ def build_budget_agent() -> Any:
     return create_agent(
         model=llm,
         tools=[load_statement, spending_overview],
-        system_prompt=system_prompt,
+        system_prompt=system_prompt or default_prompt,
     )
 
 
@@ -381,13 +381,38 @@ def run_budget_review(statement_path: str, additional_prompt: str) -> Dict[str, 
     return result
 
 
+def run_transaction_query(statement_path: str, query: str) -> Dict[str, Any]:
+    """Run a targeted transaction search using the budgeting tools."""
+
+    search_system_prompt = (
+        "You specialize in searching bank transactions. Use the available tools to "
+        "load the user's statement and answer focused questions about specific "
+        "transactions, amounts, and categories. Respond concisely with the relevant "
+        "transactions formatted as bullet points including date, description, "
+        "category, and amount in USD. If nothing matches, state that no transactions "
+        "were found."
+    )
+    agent = build_budget_agent(system_prompt=search_system_prompt)
+    combined_prompt = (
+        "The bank statement to inspect is located at: "
+        f"{statement_path}. "
+        "Use the load_statement tool with this path to fetch transactions before "
+        "answering the user's request. Focus on the specific filters or keywords the "
+        "user mentions and do not provide unrelated commentary. "
+        f"User request: {query}"
+    )
+    result = invoke_agent(agent, combined_prompt)
+    logger.info("Transaction query completed for %s", statement_path)
+    return result
+
+
 def _prompt_statement_path(default_statement: Path) -> str:
     """Interactively gather and validate the statement path from the user."""
 
     while True:
         user_input = input(
             "Enter the path to your CSV bank statement "
-            f"(press Enter for sample: {default_statement}): "
+            f"(press Enter for sample: {_to_workspace_relative(str(default_statement))}): "
         ).strip()
         candidate = user_input or str(default_statement)
         try:
@@ -854,10 +879,44 @@ def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path
     print("\nWorking on your budgeting analysis...\n")
     try:
         report_path = _generate_html_report(statement_path, instructions, outputs_dir)
-        print(f"Analysis complete! Results saved to: {report_path}\n")
+        relative_report = _to_workspace_relative(str(report_path))
+        print(f"Analysis complete! Results saved to: {relative_report}\n")
     except Exception as exc:
         logger.exception("Budget analysis run failed")
         print(f"An error occurred while running the agent: {exc}\n")
+
+
+def _run_transaction_query_flow(statement_path: str, query: str) -> None:
+    """Execute a transaction search and display results to the CLI."""
+
+    print("\nSearching for matching transactions...\n")
+    try:
+        result = run_transaction_query(statement_path, query)
+        reply = extract_final_reply(result).strip()
+        if reply:
+            print("Results:\n--------------------------------------------------")
+            for raw_line in reply.splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                if line.startswith("- "):
+                    print(f"  - {line[2:].strip()}")
+                elif line.startswith("* "):
+                    print(f"  - {line[2:].strip()}")
+                else:
+                    print(line)
+            print()
+        else:
+            print("The agent did not return a response.\n")
+        trace = format_tool_trace(result.get("messages", []))
+        if trace:
+            show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
+            if show_trace in {"y", "yes"}:
+                print("\nTool trace:\n--------------------------------------------------")
+                print(trace + "\n")
+    except Exception as exc:
+        logger.exception("Transaction query failed")
+        print(f"An error occurred while searching transactions: {exc}\n")
 
 
 def main() -> None:
@@ -868,8 +927,10 @@ def main() -> None:
     outputs_dir = workspace / "outputs"
     print("Bank Statement Budgeting Agent")
     print("--------------------------------------------------")
-    print(f"Sample statements available under: {default_statement.parent}")
-    print(f" - Default sample: {default_statement}")
+    sample_dir_display = _to_workspace_relative(str(default_statement.parent))
+    default_sample_display = _to_workspace_relative(str(default_statement))
+    print(f"Sample statements available under: {sample_dir_display}")
+    print(f" - Default sample: {default_sample_display}")
     statement_path = _prompt_statement_path(default_statement)
     example_prompt = (
         "Summarize overall income vs expenses, highlight any category exceeding $500, "
@@ -881,9 +942,10 @@ def main() -> None:
         print("What would you like to do next?")
         print("  1) Run quick summary (default prompt)")
         print("  2) Run custom analysis (you supply instructions)")
-        print("  3) Change statement path")
-        print("  4) Exit")
-        choice = input("Select an option (1-4): ").strip().lower()
+        print("  3) Find transactions (keyword query)")
+        print("  4) Change statement path")
+        print("  5) Exit")
+        choice = input("Select an option (1-5): ").strip().lower()
         if choice in {"1", "a"}:
             _run_analysis_flow(statement_path, example_prompt, outputs_dir)
         elif choice in {"2", "b"}:
@@ -894,13 +956,19 @@ def main() -> None:
                 print("Custom instructions cannot be empty. Please try again.\n")
                 continue
             _run_analysis_flow(statement_path, custom_prompt, outputs_dir)
-        elif choice in {"3", "c"}:
+        elif choice in {"3", "f", "find", "search"}:
+            search_query = input("Describe the transactions you want to find: ").strip()
+            if not search_query:
+                print("Search instructions cannot be empty. Please try again.\n")
+                continue
+            _run_transaction_query_flow(statement_path, search_query)
+        elif choice in {"4", "c", "change"}:
             statement_path = _prompt_statement_path(default_statement)
-        elif choice in {"4", "q", "quit", "exit"}:
+        elif choice in {"5", "q", "quit", "exit"}:
             print("Goodbye!")
             break
         else:
-            print("Unrecognized option. Please choose 1, 2, 3, or 4.\n")
+            print("Unrecognized option. Please choose 1, 2, 3, 4, or 5.\n")
 
 
 if __name__ == "__main__":
