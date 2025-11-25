@@ -18,7 +18,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -814,6 +814,8 @@ def _build_html_document(
     summary_html: str,
     trace_html: str,
     export_path: Optional[str] = None,
+    header_title: str = "Budget Analysis Report",
+    header_subtitle: str = "Prepared by the Bank Statement Budgeting Agent",
 ) -> str:
     """Construct a polished standalone HTML document for the report."""
 
@@ -911,11 +913,69 @@ def _build_html_document(
       line-height: 1.7;
       margin-bottom: 1rem;
     }}
-    .summary-list {{
+        .summary-list {{
       margin: 0 0 1.1rem 1.5rem;
       padding: 0;
     }}
-        .trace-grid {{
+        .category-sections {{
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+            margin-top: 2rem;
+        }}
+        .category-block {{
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+        }}
+        .category-block h3 {{
+            margin: 0 0 1rem;
+            color: var(--accent);
+            font-size: 1.15rem;
+        }}
+        .category-block__meta {{
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }}
+        table.tx-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.96rem;
+        }}
+        table.tx-table th {{
+            text-align: left;
+            padding: 0.5rem 0.65rem;
+            color: var(--muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }}
+        table.tx-table td {{
+            padding: 0.55rem 0.65rem;
+            border-bottom: 1px solid #eef2fb;
+        }}
+        table.tx-table tr:last-child td {{
+            border-bottom: none;
+        }}
+        .tx-amount {{
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }}
+        .tx-amount.negative {{
+            color: #d1394a;
+        }}
+        .tx-amount.positive {{
+            color: #2e7d32;
+        }}
+        .category-total {{
+            margin-top: 1rem;
+            text-align: right;
+            font-weight: 600;
+            color: var(--text);
+        }}
+                .trace-grid {{
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
@@ -965,9 +1025,9 @@ def _build_html_document(
   </style>
 </head>
 <body>
-  <header>
-    <h1>Budget Analysis Report</h1>
-    <p>Prepared by the Bank Statement Budgeting Agent</p>
+    <header>
+        <h1>{escape(header_title)}</h1>
+        <p>{escape(header_subtitle)}</p>
   </header>
   <main>
     <section>
@@ -1018,8 +1078,116 @@ def _generate_html_report(
     return output_file
 
 
+def _generate_transaction_report(
+    statement_path: str, query: str, outputs_dir: Path
+) -> Tuple[Path, Dict[str, Any]]:
+    """Run a transaction query and persist the findings to an HTML report."""
+
+    result = run_transaction_query(statement_path, query)
+    generated_at = datetime.now(timezone.utc)
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    output_file = outputs_dir / f"transaction_query_result_{timestamp}.html"
+    final_reply = extract_final_reply(result).strip()
+    transactions, cleaned_text = _extract_transactions(final_reply)
+    trace_block = format_tool_trace(result.get("messages", []))
+    if cleaned_text:
+        narrative_html = _format_summary_html(_shorten_paths_in_text(cleaned_text))
+    else:
+        narrative_html = "<p>Matching transactions grouped by category are summarized below.</p>"
+    categories_html = _render_transaction_categories(transactions)
+    summary_html = narrative_html + categories_html
+    trace_html = _format_trace_html(trace_block)
+    document = _build_html_document(
+        generated_at=generated_at,
+        statement_path=statement_path,
+        instructions=query,
+        summary_html=summary_html,
+        trace_html=trace_html,
+        header_title="Transaction Query Report",
+    )
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w", encoding="utf-8") as handle:
+        handle.write(document)
+    return output_file, result
+
+
 _HEADING_MARKER = re.compile(r"^#+\s*(.+)$")
 _NUMBERED_MARKER = re.compile(r"^\d+\.\s+")
+_TRANSACTION_LINE_PATTERN = re.compile(
+    r"Date:\s*(?P<date>[^,]+),\s*Description:\s*(?P<description>[^,]+),\s*Category:\s*(?P<category>[^,]+),\s*Amount:\s*(?P<amount>[\-$0-9.,]+)"
+)
+
+
+def _format_currency(amount: float) -> str:
+    sign = "-" if amount < 0 else ""
+    return f"{sign}${abs(amount):,.2f}"
+
+
+def _extract_transactions(text: str) -> Tuple[List[Dict[str, Any]], str]:
+    transactions: List[Dict[str, Any]] = []
+    kept_lines: List[str] = []
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            kept_lines.append(raw_line)
+            continue
+        normalized = stripped.lstrip("-*• ")
+        match = _TRANSACTION_LINE_PATTERN.search(normalized)
+        if not match:
+            kept_lines.append(raw_line)
+            continue
+        amount_str = match.group("amount")
+        amount_clean = amount_str.upper().replace("USD", "")
+        amount_clean = amount_clean.replace("$", "").replace(",", "").strip()
+        try:
+            amount_value = float(amount_clean)
+        except ValueError:
+            kept_lines.append(raw_line)
+            continue
+        transactions.append(
+            {
+                "date": match.group("date").strip(),
+                "description": match.group("description").strip(),
+                "category": match.group("category").strip(),
+                "amount": amount_value,
+            }
+        )
+    cleaned_text = "\n".join(line for line in kept_lines if line.strip()).strip()
+    return transactions, cleaned_text
+
+
+def _render_transaction_categories(transactions: List[Dict[str, Any]]) -> str:
+    if not transactions:
+        return ""
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for tx in transactions:
+        grouped.setdefault(tx["category"], []).append(tx)
+    sections: List[str] = ["<div class=\"category-sections\">"]
+    for category in sorted(grouped.keys()):
+        entries = grouped[category]
+        total = sum(item["amount"] for item in entries)
+        sections.append("<article class=\"category-block\">")
+        sections.append(f"<h3>{escape(category)}</h3>")
+        sections.append(
+            f"<div class=\"category-block__meta\">{len(entries)} transaction(s) · Total {escape(_format_currency(total))}</div>"
+        )
+        sections.append("<table class=\"tx-table\"><thead><tr><th>Date</th><th>Description</th><th class=\"tx-amount\">Amount</th></tr></thead><tbody>")
+        for tx in entries:
+            amount_class = "positive" if tx["amount"] >= 0 else "negative"
+            sections.append(
+                "<tr>"
+                f"<td>{escape(tx['date'])}</td>"
+                f"<td>{escape(tx['description'])}</td>"
+                f"<td class=\"tx-amount {amount_class}\">{escape(_format_currency(tx['amount']))}</td>"
+                "</tr>"
+            )
+        sections.append("</tbody></table>")
+        sections.append(
+            f"<div class=\"category-total\">Category total: {escape(_format_currency(total))}</div>"
+        )
+        sections.append("</article>")
+    sections.append("</div>")
+    return "".join(sections)
 
 
 def _render_cli_output(title: str, text: str) -> None:
@@ -1098,17 +1266,13 @@ def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path
         print(f"An error occurred while running the agent: {exc}\n")
 
 
-def _run_transaction_query_flow(statement_path: str, query: str) -> None:
+def _run_transaction_query_flow(statement_path: str, query: str, outputs_dir: Path) -> None:
     """Execute a transaction search and display results to the CLI."""
 
-    print("\nSearching for matching transactions...\n")
     try:
-        result = run_transaction_query(statement_path, query)
-        reply = extract_final_reply(result).strip()
-        if reply:
-            _render_cli_output("Results", reply)
-        else:
-            print("The agent did not return a response.\n")
+        report_path, result = _generate_transaction_report(statement_path, query, outputs_dir)
+        relative_report = _to_workspace_relative(str(report_path))
+        print(f"\nTransaction report saved to outputs: {relative_report}\n")
         trace = format_tool_trace(result.get("messages", []))
         if trace:
             show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
@@ -1257,7 +1421,7 @@ def main() -> None:
             if not search_query:
                 print("Search instructions cannot be empty. Please try again.\n")
                 continue
-            _run_transaction_query_flow(statement_path, search_query)
+            _run_transaction_query_flow(statement_path, search_query, outputs_dir)
         elif choice in {"4", "s", "subs", "subscription", "subscriptions"}:
             custom_instructions = input(
                 "Enter any extra guidance for detecting subscriptions (press Enter for default): "
