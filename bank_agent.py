@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+CLI_DIVIDER = "-" * 50
+SUBSCRIPTION_FOOTNOTE = (
+    "Estimated single instance because only one transaction appears in the "
+    "statement period, but the description or category suggests a recurring charge."
+)
+
 
 @dataclass
 class Transaction:
@@ -403,6 +409,35 @@ def run_transaction_query(statement_path: str, query: str) -> Dict[str, Any]:
     )
     result = invoke_agent(agent, combined_prompt)
     logger.info("Transaction query completed for %s", statement_path)
+    return result
+
+
+def run_subscription_detection(statement_path: str, instructions: Optional[str] = None) -> Dict[str, Any]:
+    """Identify recurring or subscription-like transactions."""
+
+    subscription_system_prompt = (
+        "You specialize in spotting recurring subscription payments. Use the "
+        "available tools to load the statement, detect merchants with regular "
+        "charges, estimate cadence and monthly cost, and flag items that look "
+        "uncertain. Return concise bullet points including vendor, frequency, and "
+        "average monthly spend."
+    )
+    agent = build_budget_agent(system_prompt=subscription_system_prompt)
+    default_instructions = (
+        "Review the entire statement for repeating charges or services. Group "
+        "likely subscriptions by merchant, note frequency (weekly/biweekly/monthly), "
+        "estimate total monthly cost, and highlight any unusual spikes or cancellations."
+    )
+    combined_prompt = (
+        "The bank statement to inspect is located at: "
+        f"{statement_path}. "
+        "Use the load_statement tool with this path to gather transactions before "
+        "summarizing. Focus on recurring charges such as streaming services, "
+        "utilities, software, memberships, or other subscription-like payments. "
+        f"Additional focus: {instructions or default_instructions}"
+    )
+    result = invoke_agent(agent, combined_prompt)
+    logger.info("Subscription detection completed for %s", statement_path)
     return result
 
 
@@ -873,6 +908,73 @@ def _generate_html_report(
     return output_file
 
 
+_HEADING_MARKER = re.compile(r"^#+\s*(.+)$")
+_NUMBERED_MARKER = re.compile(r"^\d+\.\s+")
+
+
+def _render_cli_output(title: str, text: str) -> None:
+    """Pretty-print agent text blocks for terminal readability."""
+
+    print(f"{title}\n{CLI_DIVIDER}")
+    stripped = text.strip()
+    if not stripped:
+        print("No content returned.\n")
+        return
+
+    blank_pending = False
+    footnotes: set[str] = set()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if not blank_pending:
+                print()
+                blank_pending = True
+            continue
+        blank_pending = False
+
+        line = _BOLD_PATTERN.sub(r"\1", line)
+
+        lowered = line.lower()
+        note_start = -1
+        if "estimated single instance" in lowered:
+            note_start = lowered.find("estimated single instance")
+        if note_start == -1 and "only one transaction found in" in lowered:
+            note_start = lowered.find("only one transaction found in")
+        if note_start != -1:
+            line = line[:note_start].rstrip(" ,;:-–—")
+            if line:
+                line = line.strip()
+            else:
+                line = ""
+            footnotes.add(SUBSCRIPTION_FOOTNOTE)
+            if not line:
+                continue
+
+        heading_match = _HEADING_MARKER.match(line)
+        if heading_match:
+            print(heading_match.group(1).upper())
+            continue
+        if line.startswith("- "):
+            print(f"  - {line[2:].strip()}")
+            continue
+        if line.startswith("* "):
+            print(f"  - {line[2:].strip()}")
+            continue
+        if _NUMBERED_MARKER.match(line):
+            print(f"  {line}")
+            continue
+        if line.endswith(":"):
+            print(line.rstrip(":").upper() + ":")
+            continue
+        print(line)
+    print()
+    if footnotes:
+        print(f"Notes\n{CLI_DIVIDER}")
+        for note in sorted(footnotes):
+            print(f"  - {note}")
+        print()
+
+
 def _run_analysis_flow(statement_path: str, instructions: str, outputs_dir: Path) -> None:
     """Execute an agent run with helpful CLI messaging."""
 
@@ -894,18 +996,7 @@ def _run_transaction_query_flow(statement_path: str, query: str) -> None:
         result = run_transaction_query(statement_path, query)
         reply = extract_final_reply(result).strip()
         if reply:
-            print("Results:\n--------------------------------------------------")
-            for raw_line in reply.splitlines():
-                line = raw_line.strip()
-                if not line:
-                    continue
-                if line.startswith("- "):
-                    print(f"  - {line[2:].strip()}")
-                elif line.startswith("* "):
-                    print(f"  - {line[2:].strip()}")
-                else:
-                    print(line)
-            print()
+            _render_cli_output("Results", reply)
         else:
             print("The agent did not return a response.\n")
         trace = format_tool_trace(result.get("messages", []))
@@ -917,6 +1008,28 @@ def _run_transaction_query_flow(statement_path: str, query: str) -> None:
     except Exception as exc:
         logger.exception("Transaction query failed")
         print(f"An error occurred while searching transactions: {exc}\n")
+
+
+def _run_subscription_detection_flow(statement_path: str, instructions: Optional[str]) -> None:
+    """Execute subscription detection and display the agent's findings."""
+
+    print("\nDetecting potential subscriptions...\n")
+    try:
+        result = run_subscription_detection(statement_path, instructions)
+        reply = extract_final_reply(result).strip()
+        if reply:
+            _render_cli_output("Findings", reply)
+        else:
+            print("The agent did not return a response.\n")
+        trace = format_tool_trace(result.get("messages", []))
+        if trace:
+            show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
+            if show_trace in {"y", "yes"}:
+                print("\nTool trace:\n--------------------------------------------------")
+                print(trace + "\n")
+    except Exception as exc:
+        logger.exception("Subscription detection failed")
+        print(f"An error occurred while detecting subscriptions: {exc}\n")
 
 
 def main() -> None:
@@ -943,9 +1056,10 @@ def main() -> None:
         print("  1) Run quick summary (default prompt)")
         print("  2) Run custom analysis (you supply instructions)")
         print("  3) Find transactions (keyword query)")
-        print("  4) Change statement path")
-        print("  5) Exit")
-        choice = input("Select an option (1-5): ").strip().lower()
+        print("  4) Detect subscriptions")
+        print("  5) Change statement path")
+        print("  6) Exit")
+        choice = input("Select an option (1-6): ").strip().lower()
         if choice in {"1", "a"}:
             _run_analysis_flow(statement_path, example_prompt, outputs_dir)
         elif choice in {"2", "b"}:
@@ -962,13 +1076,19 @@ def main() -> None:
                 print("Search instructions cannot be empty. Please try again.\n")
                 continue
             _run_transaction_query_flow(statement_path, search_query)
-        elif choice in {"4", "c", "change"}:
+        elif choice in {"4", "s", "subs", "subscription", "subscriptions"}:
+            custom_instructions = input(
+                "Enter any extra guidance for detecting subscriptions (press Enter for default): "
+            ).strip()
+            instructions = custom_instructions or None
+            _run_subscription_detection_flow(statement_path, instructions)
+        elif choice in {"5", "c", "change"}:
             statement_path = _prompt_statement_path(default_statement)
-        elif choice in {"5", "q", "quit", "exit"}:
+        elif choice in {"6", "q", "quit", "exit"}:
             print("Goodbye!")
             break
         else:
-            print("Unrecognized option. Please choose 1, 2, 3, 4, or 5.\n")
+            print("Unrecognized option. Please choose 1, 2, 3, 4, 5, or 6.\n")
 
 
 if __name__ == "__main__":
