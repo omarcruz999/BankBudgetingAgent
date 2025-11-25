@@ -1,1 +1,9 @@
 .env
+myenv/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+agent.log
+outputs/
