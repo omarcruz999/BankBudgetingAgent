@@ -704,6 +704,7 @@ def _format_summary_html(text: str) -> str:
 
     html_parts: List[str] = []
     list_type: str | None = None
+    table_rows: List[List[str]] = []
 
     def close_list() -> None:
         nonlocal list_type
@@ -711,19 +712,67 @@ def _format_summary_html(text: str) -> str:
             html_parts.append(f"</{list_type}>")
             list_type = None
 
+    def _is_alignment_row(cells: List[str]) -> bool:
+        if not cells:
+            return False
+        for cell in cells:
+            stripped = cell.strip()
+            if not stripped:
+                return False
+            if not re.fullmatch(r":?-+:?", stripped.replace(" ", "")):
+                return False
+        return True
+
+    def close_table() -> None:
+        nonlocal table_rows
+        if not table_rows:
+            return
+        header = table_rows[0]
+        data_start = 1
+        if len(table_rows) > 1 and _is_alignment_row(table_rows[1]):
+            data_start = 2
+        html_parts.append("<div class=\"summary-table-wrapper\"><table class=\"summary-table\">")
+        html_parts.append("<thead><tr>")
+        for cell in header:
+            html_parts.append(f"<th>{_format_inline_html(cell.strip())}</th>")
+        html_parts.append("</tr></thead>")
+        if len(table_rows) > data_start:
+            html_parts.append("<tbody>")
+            for row in table_rows[data_start:]:
+                html_parts.append("<tr>")
+                for cell in row:
+                    html_parts.append(f"<td>{_format_inline_html(cell.strip())}</td>")
+                html_parts.append("</tr>")
+            html_parts.append("</tbody>")
+        html_parts.append("</table></div>")
+        table_rows = []
+
     for raw_line in cleaned.splitlines():
         stripped = raw_line.strip()
         if not stripped:
             close_list()
+            close_table()
             continue
         heading_match = re.match(r"^(#{1,6})\s+(.*)", stripped)
         if heading_match:
             close_list()
+            close_table()
             level = len(heading_match.group(1))
             content = heading_match.group(2)
             tag = "h3" if level <= 3 else "h4"
             html_parts.append(f"<{tag}>{_format_inline_html(content)}</{tag}>")
             continue
+        if stripped in {"---", "***", "___"}:
+            close_list()
+            close_table()
+            html_parts.append("<hr class=\"summary-divider\" />")
+            continue
+        if re.match(r"^\|.+\|$", stripped):
+            close_list()
+            cells = [cell for cell in stripped.strip("|").split("|")]
+            table_rows.append(cells)
+            continue
+        close_table()
         if stripped.startswith(('- ', '* ')):
             if list_type != "ul":
                 close_list()
@@ -740,9 +789,11 @@ def _format_summary_html(text: str) -> str:
             html_parts.append(f"<li>{_format_inline_html(content)}</li>")
             continue
         close_list()
+        close_table()
         html_parts.append(f"<p>{_format_inline_html(stripped)}</p>")
 
     close_list()
+    close_table()
     return "".join(html_parts)
 
 
@@ -931,6 +982,36 @@ def _build_html_document(
       margin: 0 0 1.1rem 1.5rem;
       padding: 0;
     }}
+                .summary-table-wrapper {{
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }}
+        table.summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.96rem;
+            background: #fff;
+        }}
+        table.summary-table thead th {{
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            color: var(--muted);
+            font-weight: 600;
+            background: var(--accent-soft);
+            border-bottom: 2px solid var(--border);
+        }}
+        table.summary-table tbody td {{
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid #eef2fb;
+        }}
+        table.summary-table tbody tr:last-child td {{
+            border-bottom: none;
+        }}
+        .summary-divider {{
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }}
         .category-sections {{
             display: flex;
             flex-direction: column;
