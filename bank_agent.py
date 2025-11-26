@@ -43,6 +43,11 @@ SUBSCRIPTION_FOOTNOTE = (
     "Estimated single instance because only one transaction appears in the "
     "statement period, but the description or category suggests a recurring charge."
 )
+SUBSCRIPTION_DEFAULT_INSTRUCTIONS = (
+    "Review the entire statement for repeating charges or services. Group likely "
+    "subscriptions by merchant, note frequency (weekly/biweekly/monthly), estimate "
+    "total monthly cost, and highlight any unusual spikes or cancellations."
+)
 
 
 @dataclass
@@ -495,18 +500,13 @@ def run_subscription_detection(statement_path: str, instructions: Optional[str] 
         "average monthly spend."
     )
     agent = build_budget_agent(system_prompt=subscription_system_prompt)
-    default_instructions = (
-        "Review the entire statement for repeating charges or services. Group "
-        "likely subscriptions by merchant, note frequency (weekly/biweekly/monthly), "
-        "estimate total monthly cost, and highlight any unusual spikes or cancellations."
-    )
     combined_prompt = (
         "The bank statement to inspect is located at: "
         f"{statement_path}. "
         "Use the load_statement tool with this path to gather transactions before "
         "summarizing. Focus on recurring charges such as streaming services, "
         "utilities, software, memberships, or other subscription-like payments. "
-        f"Additional focus: {instructions or default_instructions}"
+        f"Additional focus: {instructions or SUBSCRIPTION_DEFAULT_INSTRUCTIONS}"
     )
     result = invoke_agent(agent, combined_prompt)
     logger.info("Subscription detection completed for %s", statement_path)
@@ -1116,6 +1116,21 @@ _NUMBERED_MARKER = re.compile(r"^\d+\.\s+")
 _TRANSACTION_LINE_PATTERN = re.compile(
     r"Date:\s*(?P<date>[^,]+),\s*Description:\s*(?P<description>[^,]+),\s*Category:\s*(?P<category>[^,]+),\s*Amount:\s*(?P<amount>[\-$0-9.,]+)"
 )
+_SUBSCRIPTION_SPLIT_PATTERN = re.compile(r"\s+[-–—]\s+")
+_SUBSCRIPTION_AMOUNT_PATTERN = re.compile(r"\$?\s*([-+]?\d[\d,]*(?:\.\d+)?)", re.IGNORECASE)
+_SUBSCRIPTION_FREQ_KEYWORDS = [
+    ("weekly", "Weekly"),
+    ("biweekly", "Biweekly"),
+    ("fortnight", "Biweekly"),
+    ("semi-month", "Semi-monthly"),
+    ("semimonth", "Semi-monthly"),
+    ("monthly", "Monthly"),
+    ("quarter", "Quarterly"),
+    ("annual", "Annual"),
+    ("annually", "Annual"),
+    ("yearly", "Annual"),
+    ("every other month", "Every other month"),
+]
 
 
 def _format_currency(amount: float) -> str:
@@ -1188,6 +1203,215 @@ def _render_transaction_categories(transactions: List[Dict[str, Any]]) -> str:
         sections.append("</article>")
     sections.append("</div>")
     return "".join(sections)
+
+
+def _extract_subscriptions(text: str) -> Tuple[List[Dict[str, Any]], str]:
+    subscriptions: List[Dict[str, Any]] = []
+    kept_lines: List[str] = []
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            kept_lines.append(raw_line)
+            continue
+        normalized = stripped.lstrip("-*• ")
+        lowered = normalized.lower()
+        normalized = normalized.replace("**", "")
+
+        token_map: Dict[str, str] = {}
+        key_value_pairs: List[Tuple[str, str]] = []
+        if ":" in normalized and any(
+            keyword in lowered for keyword in ("vendor", "merchant", "frequency", "monthly", "amount", "cost", "spend")
+        ):
+            for token in re.split(r"[|;]", normalized):
+                if ":" not in token:
+                    continue
+                key, value = token.split(":", 1)
+                clean_key = key.strip()
+                clean_value = value.strip()
+                token_map[clean_key.lower()] = clean_value
+                key_value_pairs.append((clean_key, clean_value))
+        amount_value: Optional[float] = None
+        amount_token: Optional[str] = None
+
+        if token_map:
+            vendor = token_map.get("vendor") or token_map.get("merchant")
+            if not vendor and key_value_pairs:
+                vendor = key_value_pairs[0][0]
+            frequency = token_map.get("frequency")
+            if not frequency and key_value_pairs:
+                candidate = key_value_pairs[0][1].lower()
+                for keyword, label in _SUBSCRIPTION_FREQ_KEYWORDS:
+                    if keyword in candidate:
+                        frequency = label
+                        break
+                if not frequency:
+                    if "per month" in candidate or "/month" in candidate:
+                        frequency = "Monthly"
+                    elif "per week" in candidate or "/week" in candidate:
+                        frequency = "Weekly"
+                    elif "per year" in candidate or "/year" in candidate:
+                        frequency = "Annual"
+            amount_field = (
+                token_map.get("monthly spend")
+                or token_map.get("monthly cost")
+                or token_map.get("spend")
+                or token_map.get("amount")
+                or token_map.get("cost")
+            )
+            if amount_field:
+                match = _SUBSCRIPTION_AMOUNT_PATTERN.search(amount_field)
+                if match:
+                    amount_clean = match.group(1).replace(",", "")
+                    try:
+                        amount_value = float(amount_clean)
+                        amount_token = match.group(0)
+                    except ValueError:
+                        amount_value = None
+            if amount_field is None and key_value_pairs:
+                for _, candidate_value in key_value_pairs:
+                    match = _SUBSCRIPTION_AMOUNT_PATTERN.search(candidate_value)
+                    if match:
+                        amount_clean = match.group(1).replace(",", "")
+                        try:
+                            amount_value = float(amount_clean)
+                            amount_token = match.group(0)
+                            break
+                        except ValueError:
+                            amount_value = None
+            detail_text = ""
+        else:
+            split_parts = _SUBSCRIPTION_SPLIT_PATTERN.split(normalized, maxsplit=1)
+            if len(split_parts) == 2:
+                vendor = split_parts[0].strip()
+                remainder = split_parts[1].strip()
+            else:
+                vendor = normalized
+                remainder = ""
+            frequency: Optional[str] = None
+            for keyword, label in _SUBSCRIPTION_FREQ_KEYWORDS:
+                if keyword in lowered:
+                    frequency = label
+                    break
+            if not frequency:
+                if "per month" in lowered or "/month" in lowered:
+                    frequency = "Monthly"
+                elif "per week" in lowered or "/week" in lowered:
+                    frequency = "Weekly"
+                elif "per year" in lowered or "/year" in lowered:
+                    frequency = "Annual"
+            amount_search = _SUBSCRIPTION_AMOUNT_PATTERN.search(remainder or normalized)
+            if amount_search:
+                amount_clean = amount_search.group(1).replace(",", "")
+                try:
+                    amount_value = float(amount_clean)
+                    amount_token = amount_search.group(0)
+                except ValueError:
+                    amount_value = None
+            detail_text = remainder.strip()
+
+        vendor = (vendor or "").strip()
+        if not vendor:
+            kept_lines.append(raw_line)
+            continue
+
+        if amount_value is None:
+            kept_lines.append(raw_line)
+            continue
+
+        if amount_token and amount_token in vendor:
+            vendor = vendor.replace(amount_token, "", 1).strip(" -:;•")
+
+        if detail_text and amount_token and amount_token in detail_text:
+            detail_text = detail_text.replace(amount_token, "", 1).strip()
+
+        if detail_text and detail_text.lower() == vendor.lower():
+            detail_text = ""
+
+        subscriptions.append(
+            {
+                "vendor": vendor,
+                "frequency": (frequency or "").strip(),
+                "monthly_cost": amount_value,
+                "details": detail_text.strip(),
+            }
+        )
+
+    cleaned_text = "\n".join(line for line in kept_lines if line.strip()).strip()
+    return subscriptions, cleaned_text
+
+
+def _render_subscription_sections(subscriptions: List[Dict[str, Any]]) -> str:
+    if not subscriptions:
+        return ""
+
+    sections: List[str] = ["<div class=\"category-sections\">"]
+    for entry in subscriptions:
+        vendor = escape(entry.get("vendor", "Unknown vendor"))
+        frequency = (entry.get("frequency") or "").strip()
+        monthly_cost = entry.get("monthly_cost")
+        details = entry.get("details", "")
+
+        sections.append("<article class=\"category-block\">")
+        sections.append(f"<h3>{vendor}</h3>")
+
+        meta_parts: List[str] = []
+        if frequency:
+            meta_parts.append(frequency)
+        if monthly_cost is not None:
+            meta_parts.append(f"Monthly cost {escape(_format_currency(monthly_cost))}")
+        meta_line = " · ".join(meta_parts) if meta_parts else "Details unavailable"
+        sections.append(f"<div class=\"category-block__meta\">{escape(meta_line)}</div>")
+
+        if details and details.lower() != vendor.lower():
+            sections.append(f"<p>{_format_inline_html(details)}</p>")
+
+        sections.append("</article>")
+    sections.append("</div>")
+    return "".join(sections)
+
+
+def _generate_subscription_report(
+    statement_path: str, instructions: Optional[str], outputs_dir: Path
+) -> Tuple[Path, Dict[str, Any]]:
+    """Run subscription detection and persist the findings to an HTML report."""
+
+    result = run_subscription_detection(statement_path, instructions)
+    generated_at = datetime.now(timezone.utc)
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    output_file = outputs_dir / f"subscription_detection_result_{timestamp}.html"
+
+    final_reply = extract_final_reply(result).strip()
+    subscriptions, cleaned_text = _extract_subscriptions(final_reply)
+
+    if cleaned_text:
+        narrative_html = _format_summary_html(_shorten_paths_in_text(cleaned_text))
+    elif subscriptions:
+        narrative_html = "<p>Recurring services flagged by the agent are summarized below.</p>"
+    else:
+        narrative_html = "<p><em>No subscription findings were returned.</em></p>"
+
+    sections_html = _render_subscription_sections(subscriptions)
+    summary_html = narrative_html + sections_html
+
+    trace_block = format_tool_trace(result.get("messages", []))
+    trace_html = _format_trace_html(trace_block)
+    instructions_text = instructions or SUBSCRIPTION_DEFAULT_INSTRUCTIONS
+
+    document = _build_html_document(
+        generated_at=generated_at,
+        statement_path=statement_path,
+        instructions=instructions_text,
+        summary_html=summary_html,
+        trace_html=trace_html,
+        header_title="Subscription Detection Report",
+    )
+
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w", encoding="utf-8") as handle:
+        handle.write(document)
+
+    logger.info("Subscription detection report saved to %s", output_file)
+    return output_file, result
 
 
 def _render_cli_output(title: str, text: str) -> None:
@@ -1284,17 +1508,13 @@ def _run_transaction_query_flow(statement_path: str, query: str, outputs_dir: Pa
         print(f"An error occurred while searching transactions: {exc}\n")
 
 
-def _run_subscription_detection_flow(statement_path: str, instructions: Optional[str]) -> None:
+def _run_subscription_detection_flow(
+    statement_path: str, instructions: Optional[str], outputs_dir: Path
+) -> None:
     """Execute subscription detection and display the agent's findings."""
 
-    print("\nDetecting potential subscriptions...\n")
     try:
-        result = run_subscription_detection(statement_path, instructions)
-        reply = extract_final_reply(result).strip()
-        if reply:
-            _render_cli_output("Findings", reply)
-        else:
-            print("The agent did not return a response.\n")
+        _, result = _generate_subscription_report(statement_path, instructions, outputs_dir)
         trace = format_tool_trace(result.get("messages", []))
         if trace:
             show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
@@ -1427,7 +1647,7 @@ def main() -> None:
                 "Enter any extra guidance for detecting subscriptions (press Enter for default): "
             ).strip()
             instructions = custom_instructions or None
-            _run_subscription_detection_flow(statement_path, instructions)
+            _run_subscription_detection_flow(statement_path, instructions, outputs_dir)
         elif choice in {"5", "compare", "comparison", "compare statements"}:
             _run_statement_comparison_flow(
                 statement_path,
