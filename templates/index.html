@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bank Statement Budgeting Agent</title>
+  <style>
+    :root {
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --accent: #0f62fe;
+      --accent-soft: #e0ecff;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475467;
+      --border: #d7dce4;
+      --error: #d1394a;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: linear-gradient(135deg, var(--accent), #54b7ff);
+      color: white;
+      padding: 2.75rem 3rem 3.5rem;
+      box-shadow: 0 16px 48px rgba(15, 23, 42, 0.2);
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2.45rem;
+    }
+    header p {
+      margin: 0;
+      max-width: 720px;
+      line-height: 1.6;
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.92);
+    }
+    main {
+      max-width: 1080px;
+      margin: -2.5rem auto 3.5rem;
+      padding: 0 1.75rem;
+    }
+    .page-card {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 2.35rem;
+      box-shadow: 0 22px 50px rgba(15, 23, 42, 0.09);
+      border: 1px solid var(--border);
+      margin-bottom: 2.25rem;
+    }
+    .page-card h2 {
+      margin: 0 0 1.1rem;
+      font-size: 1.6rem;
+      letter-spacing: 0.01em;
+    }
+    .option-grid {
+      display: grid;
+      gap: 1.75rem;
+    }
+    .option-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 2rem;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    }
+    .option-card h3 {
+      margin: 0 0 0.75rem;
+      font-size: 1.35rem;
+      color: var(--accent);
+    }
+    .option-card p.description {
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    form {
+      display: grid;
+      gap: 1.1rem;
+    }
+    .field-group {
+      display: grid;
+      gap: 0.5rem;
+    }
+    label {
+      font-weight: 600;
+      color: var(--text);
+    }
+    select,
+    input[type="file"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+      font-size: 0.98rem;
+      background: #ffffff;
+      color: var(--text);
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+    select:focus,
+    input[type="file"]:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.15);
+    }
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.75rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button.primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 14px 30px rgba(15, 98, 254, 0.22);
+    }
+    button.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 34px rgba(15, 98, 254, 0.28);
+    }
+    button.secondary {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .sample-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .alert {
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      margin-bottom: 1.75rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .alert-error {
+      background: rgba(209, 57, 74, 0.12);
+      border: 1px solid rgba(209, 57, 74, 0.35);
+      color: var(--error);
+    }
+    .samples-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .samples-list li {
+      background: var(--accent-soft);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+    }
+    @media (max-width: 720px) {
+      header {
+        padding: 2.5rem 1.5rem 3rem;
+      }
+      main {
+        margin-top: -2rem;
+        padding: 0 1.25rem;
+      }
+      .page-card {
+        padding: 1.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bank Statement Budgeting Agent</h1>
+    <p>Upload your CSV bank statements, choose an analysis option, and receive polished HTML reports that match the professional style of the generated outputs.</p>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="page-card">
+      <h2>Available Sample Statements</h2>
+      <p class="sample-note">The workspace includes ready-to-use sample CSV statements. Select one from the dropdowns below or upload your own CSV file.</p>
+      {% if sample_files %}
+        <ul class="samples-list">
+          {% for sample in sample_files %}
+            <li>{{ sample.label }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="sample-note">No sample files were found in the <code>samples/</code> directory.</p>
+      {% endif %}
+    </section>
+
+    <section class="option-grid">
+      <article class="option-card">
+        <h3>Quick Budget Summary</h3>
+        <p class="description">Runs the default budgeting prompt to highlight income vs. expenses, top categories, notable transactions, and tailored recommendations.</p>
+        <form action="{{ url_for('run_action') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="quick-summary" />
+          <div class="field-group">
+            <label for="quick-sample">Choose sample statement (optional)</label>
+            <select id="quick-sample" name="statement_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+            <span class="sample-note">If you do not pick a sample, upload a CSV bank statement below.</span>
+          </div>
+          <div class="field-group">
+            <label for="quick-file">Upload bank statement (CSV)</label>
+            <input type="file" id="quick-file" name="statement_file" accept=".csv" />
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary">Generate Summary Report</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="option-card">
+        <h3>Custom Analysis</h3>
+        <p class="description">Provide bespoke instructions for the agent and receive a detailed budgeting narrative tailored to your needs.</p>
+        <form action="{{ url_for('run_action') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="custom-analysis" />
+          <div class="field-group">
+            <label for="custom-sample">Choose sample statement (optional)</label>
+            <select id="custom-sample" name="statement_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="custom-file">Upload bank statement (CSV)</label>
+            <input type="file" id="custom-file" name="statement_file" accept=".csv" />
+          </div>
+          <div class="field-group">
+            <label for="custom-instructions">Analysis instructions</label>
+            <textarea id="custom-instructions" name="custom_instructions" placeholder="Describe the insights you want the budgeting agent to surface..."></textarea>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary">Run Custom Analysis</button>
+            <button type="button" class="secondary" onclick="document.getElementById('custom-instructions').value='{{ default_summary_prompt }}'">Insert default prompt</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="option-card">
+        <h3>Transaction Query</h3>
+        <p class="description">Search your statement for specific merchants, amounts, or categories and receive a grouped HTML report.</p>
+        <form action="{{ url_for('run_action') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="transaction-query" />
+          <div class="field-group">
+            <label for="tx-sample">Choose sample statement (optional)</label>
+            <select id="tx-sample" name="statement_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="tx-file">Upload bank statement (CSV)</label>
+            <input type="file" id="tx-file" name="statement_file" accept=".csv" />
+          </div>
+          <div class="field-group">
+            <label for="tx-query">Transaction query</label>
+            <input type="text" id="tx-query" name="transaction_query" placeholder="e.g., charges over $200, Starbucks purchases in October, etc." />
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary">Search Transactions</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="option-card">
+        <h3>Subscription Detection</h3>
+        <p class="description">Identify recurring payments, estimate their cadence, and surface potential subscriptions with a polished summary.</p>
+        <form action="{{ url_for('run_action') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="subscription-detection" />
+          <div class="field-group">
+            <label for="sub-sample">Choose sample statement (optional)</label>
+            <select id="sub-sample" name="statement_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="sub-file">Upload bank statement (CSV)</label>
+            <input type="file" id="sub-file" name="statement_file" accept=".csv" />
+          </div>
+          <div class="field-group">
+            <label for="sub-instructions">Additional guidance (optional)</label>
+            <textarea id="sub-instructions" name="subscription_instructions" placeholder="{{ default_subscription_instructions }}"></textarea>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary">Detect Subscriptions</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="option-card">
+        <h3>Statement Comparison</h3>
+        <p class="description">Upload two statements to compare income, expenses, and category-level changes between periods.</p>
+        <form action="{{ url_for('run_action') }}" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="statement-comparison" />
+          <div class="field-group">
+            <label for="primary-sample">Primary statement sample (optional)</label>
+            <select id="primary-sample" name="primary_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="primary-file">Upload primary statement (CSV)</label>
+            <input type="file" id="primary-file" name="primary_statement" accept=".csv" />
+          </div>
+          <div class="field-group">
+            <label for="comparison-sample">Comparison statement sample (optional)</label>
+            <select id="comparison-sample" name="comparison_sample">
+              <option value="">Upload my own statement…</option>
+              {% for sample in sample_files %}
+                <option value="{{ sample.value }}">{{ sample.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="comparison-file">Upload comparison statement (CSV)</label>
+            <input type="file" id="comparison-file" name="comparison_statement" accept=".csv" />
+          </div>
+          <div class="field-group">
+            <label for="comparison-instructions">Additional focus (optional)</label>
+            <textarea id="comparison-instructions" name="comparison_instructions" placeholder="{{ default_comparison_instructions }}"></textarea>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary">Compare Statements</button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

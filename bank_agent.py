@@ -55,6 +55,13 @@ COMPARISON_DEFAULT_INSTRUCTIONS = (
     "savings between the two periods."
 )
 
+DEFAULT_SUMMARY_PROMPT = (
+    "Summarize overall income vs expenses, highlight any category exceeding $500, "
+    "call out the five largest expenses, describe spending trends you notice, "
+    "and provide three actionable budgeting recommendations. Format amounts in USD "
+    "and deliver a detailed narrative without asking follow-up questions."
+)
+
 
 @dataclass
 class Transaction:
@@ -1716,6 +1723,40 @@ def _generate_subscription_report(
     return output_file, result
 
 
+def generate_budget_report(statement_path: str, instructions: str) -> Path:
+    """Public helper to generate a budget analysis report and return the file path."""
+
+    return _generate_html_report(statement_path, instructions, ROOT_DIR / "outputs")
+
+
+def generate_transaction_report(statement_path: str, query: str) -> Path:
+    """Public helper to generate a transaction query report and return the file path."""
+
+    report_path, _ = _generate_transaction_report(statement_path, query, ROOT_DIR / "outputs")
+    return report_path
+
+
+def generate_subscription_report(statement_path: str, instructions: Optional[str]) -> Path:
+    """Public helper to generate a subscription detection report and return the file path."""
+
+    report_path, _ = _generate_subscription_report(statement_path, instructions, ROOT_DIR / "outputs")
+    return report_path
+
+
+def generate_comparison_report(
+    primary_statement_path: str, comparison_statement_path: str, instructions: Optional[str]
+) -> Path:
+    """Public helper to generate a statement comparison report and return the file path."""
+
+    report_path, _ = _generate_comparison_report(
+        primary_statement_path,
+        comparison_statement_path,
+        instructions,
+        ROOT_DIR / "outputs",
+    )
+    return report_path
+
+
 def _render_cli_output(title: str, text: str) -> None:
     """Pretty-print agent text blocks for terminal readability."""
 
@@ -1913,12 +1954,6 @@ def main() -> None:
     print(f" - Default sample: {default_sample_display}")
     print(f" - Comparison sample: {comparison_sample_display}")
     statement_path = _prompt_statement_path(default_statement)
-    example_prompt = (
-        "Summarize overall income vs expenses, highlight any category exceeding $500, "
-        "call out the five largest expenses, describe spending trends you notice, "
-        "and provide three actionable budgeting recommendations. Format amounts in USD "
-        "and deliver a detailed narrative without asking follow-up questions."
-    )
     while True:
         print("What would you like to do next?")
         print("  1) Run quick summary (default prompt)")
@@ -1930,7 +1965,7 @@ def main() -> None:
         print("  7) Exit")
         choice = input("Select an option (1-7): ").strip().lower()
         if choice in {"1", "a"}:
-            _run_analysis_flow(statement_path, example_prompt, outputs_dir)
+            _run_analysis_flow(statement_path, DEFAULT_SUMMARY_PROMPT, outputs_dir)
         elif choice in {"2", "b"}:
             custom_prompt = input(
                 "Enter the instructions you want the agent to follow: "
