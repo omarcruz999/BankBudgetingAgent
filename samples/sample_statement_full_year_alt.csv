@@ -1,0 +1,709 @@
+Date,Description,Category,Amount
+2025-09-01,Salary Deposit,Income,3716.94
+2025-09-02,Rent Payment,Housing,-1556.08
+2025-09-02,Grocery Run Aisle 5,Groceries,-106.34
+2025-09-03,Morning Coffee,Food & Drink,-6.36
+2025-09-03,Bus Pass Reload,Transport,-37.84
+2025-09-04,Electric Bill,Utilities,-83.88
+2025-09-04,Streaming Subscription,Entertainment,-12.89
+2025-09-05,Pharmacy Visit,Health,-38.96
+2025-09-05,Fitness Club,Fitness,-54.12
+2025-09-06,Restaurant Night Out,Food & Drink,-69.58
+2025-09-06,Freelance Invoice,Income,751.06
+2025-09-07,Charity Donation,Charity,-34.37
+2025-09-07,Gas Station Fill-Up,Transport,-56.08
+2025-09-08,Bookstore Purchase,Education,-29.04
+2025-09-08,Internet Provider,Utilities,-71.57
+2025-09-09,Hardware Store,Home Improvement,-60.44
+2025-09-09,Insurance Premium,Insurance,-142.68
+2025-09-10,Salon Visit,Personal Care,-83.5
+2025-09-10,Stock Dividend,Investment Income,51.74
+2025-09-11,Lunch with Colleagues,Food & Drink,-27.81
+2025-09-11,Parking Garage,Transport,-16.72
+2025-09-12,Art Supplies,Entertainment,-33.74
+2025-09-12,Side Gig Payment,Income,185.61
+2025-09-13,Farmer's Market,Groceries,-42.18
+2025-09-13,Pet Store,Pet Care,-34.28
+2025-09-14,Car Wash,Transport,-13.9
+2025-09-14,Online Course,Education,-118.01
+2025-09-15,Savings Transfer,Savings,-334.62
+2025-09-15,Mobile Phone Bill,Utilities,-76.2
+2025-09-16,Tax Refund,Income,156.96
+2025-09-16,Movie Night,Entertainment,-21.36
+2025-09-17,Coffee Beans,Food & Drink,-22.78
+2025-09-17,Yoga Studio,Fitness,-51.09
+2025-09-18,Home Repair Service,Home Improvement,-216.03
+2025-09-18,Office Supplies,Work Expenses,-30.11
+2025-09-19,Car Maintenance,Transport,-289.53
+2025-09-19,Garden Center,Home Improvement,-56.8
+2025-09-20,Friend's Gift,Personal Care,-24.05
+2025-09-20,Consulting Retainer,Income,576.09
+2025-09-21,Restaurant Brunch,Food & Drink,-56.79
+2025-09-21,Pharmacy Refill,Health,-32.32
+2025-09-22,Electric Scooter Charge,Transport,-12.07
+2025-09-22,Cloud Storage,Utilities,-11.74
+2025-09-23,Book Club Snacks,Entertainment,-13.44
+2025-09-23,Childcare Fee,Family,-206.16
+2025-09-24,Water Bill,Utilities,-43.69
+2025-09-24,Freelance Bonus,Income,123.41
+2025-09-25,Cooking Class,Education,-105.4
+2025-09-25,Veterinary Checkup,Pet Care,-140.23
+2025-09-26,Concert Tickets,Entertainment,-123.82
+2025-09-26,Bike Repair,Transport,-72.42
+2025-09-27,Weekend Groceries,Groceries,-146.65
+2025-09-27,Farmer's Market Stall,Side Business,224.93
+2025-09-28,Home Insurance,Insurance,-116.98
+2025-09-28,Donation Drive,Charity,-67.73
+2025-09-29,Public Transit,Transport,-27.21
+2025-09-29,Co-Working Space,Work Expenses,-78.0
+2025-09-30,Interest Earned,Investment Income,11.12
+2025-09-30,End-of-Month Savings,Savings,-501.45
+2025-10-01,Salary Deposit,Income,3855.29
+2025-10-02,Rent Payment,Housing,-1817.73
+2025-10-02,Grocery Run Aisle 5,Groceries,-117.18
+2025-10-03,Morning Coffee,Food & Drink,-7.19
+2025-10-03,Bus Pass Reload,Transport,-50.67
+2025-10-04,Electric Bill,Utilities,-71.5
+2025-10-04,Streaming Subscription,Entertainment,-14.63
+2025-10-05,Pharmacy Visit,Health,-39.41
+2025-10-05,Fitness Club,Fitness,-61.47
+2025-10-06,Restaurant Night Out,Food & Drink,-70.84
+2025-10-06,Freelance Invoice,Income,577.77
+2025-10-07,Charity Donation,Charity,-49.08
+2025-10-07,Gas Station Fill-Up,Transport,-69.72
+2025-10-08,Bookstore Purchase,Education,-32.67
+2025-10-08,Internet Provider,Utilities,-74.92
+2025-10-09,Hardware Store,Home Improvement,-92.61
+2025-10-09,Insurance Premium,Insurance,-124.36
+2025-10-10,Salon Visit,Personal Care,-90.53
+2025-10-10,Stock Dividend,Investment Income,44.88
+2025-10-11,Lunch with Colleagues,Food & Drink,-33.02
+2025-10-11,Parking Garage,Transport,-18.0
+2025-10-12,Art Supplies,Entertainment,-31.42
+2025-10-12,Side Gig Payment,Income,241.36
+2025-10-13,Farmer's Market,Groceries,-40.07
+2025-10-13,Pet Store,Pet Care,-29.97
+2025-10-14,Car Wash,Transport,-16.77
+2025-10-14,Online Course,Education,-93.44
+2025-10-15,Savings Transfer,Savings,-387.59
+2025-10-15,Mobile Phone Bill,Utilities,-63.93
+2025-10-16,Tax Refund,Income,176.12
+2025-10-16,Movie Night,Entertainment,-19.87
+2025-10-17,Coffee Beans,Food & Drink,-22.75
+2025-10-17,Yoga Studio,Fitness,-61.24
+2025-10-18,Home Repair Service,Home Improvement,-225.24
+2025-10-18,Office Supplies,Work Expenses,-35.56
+2025-10-19,Car Maintenance,Transport,-364.68
+2025-10-19,Garden Center,Home Improvement,-44.21
+2025-10-20,Friend's Gift,Personal Care,-32.81
+2025-10-20,Consulting Retainer,Income,540.17
+2025-10-21,Restaurant Brunch,Food & Drink,-56.85
+2025-10-21,Pharmacy Refill,Health,-25.41
+2025-10-22,Electric Scooter Charge,Transport,-11.99
+2025-10-22,Cloud Storage,Utilities,-8.28
+2025-10-23,Book Club Snacks,Entertainment,-19.28
+2025-10-23,Childcare Fee,Family,-220.11
+2025-10-24,Water Bill,Utilities,-54.13
+2025-10-24,Freelance Bonus,Income,136.33
+2025-10-25,Cooking Class,Education,-75.95
+2025-10-25,Veterinary Checkup,Pet Care,-122.36
+2025-10-26,Concert Tickets,Entertainment,-149.22
+2025-10-26,Bike Repair,Transport,-77.47
+2025-10-27,Weekend Groceries,Groceries,-153.6
+2025-10-27,Farmer's Market Stall,Side Business,221.32
+2025-10-28,Home Insurance,Insurance,-100.97
+2025-10-28,Donation Drive,Charity,-50.88
+2025-10-29,Public Transit,Transport,-25.43
+2025-10-29,Co-Working Space,Work Expenses,-82.32
+2025-10-30,Interest Earned,Investment Income,13.94
+2025-10-30,End-of-Month Savings,Savings,-499.03
+2025-11-01,Salary Deposit,Income,3245.14
+2025-11-02,Rent Payment,Housing,-1649.42
+2025-11-02,Grocery Run Aisle 5,Groceries,-153.12
+2025-11-03,Morning Coffee,Food & Drink,-5.16
+2025-11-03,Bus Pass Reload,Transport,-50.18
+2025-11-04,Electric Bill,Utilities,-88.45
+2025-11-04,Streaming Subscription,Entertainment,-13.46
+2025-11-05,Pharmacy Visit,Health,-31.24
+2025-11-05,Fitness Club,Fitness,-55.11
+2025-11-06,Restaurant Night Out,Food & Drink,-75.65
+2025-11-06,Freelance Invoice,Income,616.98
+2025-11-07,Charity Donation,Charity,-49.44
+2025-11-07,Gas Station Fill-Up,Transport,-51.62
+2025-11-08,Bookstore Purchase,Education,-26.9
+2025-11-08,Internet Provider,Utilities,-52.95
+2025-11-09,Hardware Store,Home Improvement,-85.35
+2025-11-09,Insurance Premium,Insurance,-124.39
+2025-11-10,Salon Visit,Personal Care,-73.18
+2025-11-10,Stock Dividend,Investment Income,46.09
+2025-11-11,Lunch with Colleagues,Food & Drink,-30.07
+2025-11-11,Parking Garage,Transport,-21.97
+2025-11-12,Art Supplies,Entertainment,-30.97
+2025-11-12,Side Gig Payment,Income,204.07
+2025-11-13,Farmer's Market,Groceries,-38.45
+2025-11-13,Pet Store,Pet Care,-41.95
+2025-11-14,Car Wash,Transport,-14.59
+2025-11-14,Online Course,Education,-86.61
+2025-11-15,Savings Transfer,Savings,-492.66
+2025-11-15,Mobile Phone Bill,Utilities,-69.7
+2025-11-16,Tax Refund,Income,147.02
+2025-11-16,Movie Night,Entertainment,-24.95
+2025-11-17,Coffee Beans,Food & Drink,-22.45
+2025-11-17,Yoga Studio,Fitness,-53.53
+2025-11-18,Home Repair Service,Home Improvement,-201.21
+2025-11-18,Office Supplies,Work Expenses,-33.62
+2025-11-19,Car Maintenance,Transport,-285.83
+2025-11-19,Garden Center,Home Improvement,-42.43
+2025-11-20,Friend's Gift,Personal Care,-32.67
+2025-11-20,Consulting Retainer,Income,619.42
+2025-11-21,Restaurant Brunch,Food & Drink,-40.26
+2025-11-21,Pharmacy Refill,Health,-22.72
+2025-11-22,Electric Scooter Charge,Transport,-11.39
+2025-11-22,Cloud Storage,Utilities,-11.5
+2025-11-23,Book Club Snacks,Entertainment,-20.11
+2025-11-23,Childcare Fee,Family,-187.89
+2025-11-24,Water Bill,Utilities,-55.05
+2025-11-24,Freelance Bonus,Income,102.68
+2025-11-25,Cooking Class,Education,-94.7
+2025-11-25,Veterinary Checkup,Pet Care,-145.41
+2025-11-26,Concert Tickets,Entertainment,-144.87
+2025-11-26,Bike Repair,Transport,-63.67
+2025-11-27,Weekend Groceries,Groceries,-152.01
+2025-11-27,Farmer's Market Stall,Side Business,210.7
+2025-11-28,Home Insurance,Insurance,-141.28
+2025-11-28,Donation Drive,Charity,-49.84
+2025-11-29,Public Transit,Transport,-20.83
+2025-11-29,Co-Working Space,Work Expenses,-98.02
+2025-11-30,Interest Earned,Investment Income,14.08
+2025-11-30,End-of-Month Savings,Savings,-414.98
+2025-12-01,Salary Deposit,Income,2562.54
+2025-12-02,Rent Payment,Housing,-1600.92
+2025-12-02,Grocery Run Aisle 5,Groceries,-145.65
+2025-12-03,Morning Coffee,Food & Drink,-5.89
+2025-12-03,Bus Pass Reload,Transport,-49.32
+2025-12-04,Electric Bill,Utilities,-91.21
+2025-12-04,Streaming Subscription,Entertainment,-15.98
+2025-12-05,Pharmacy Visit,Health,-43.41
+2025-12-05,Fitness Club,Fitness,-48.97
+2025-12-06,Restaurant Night Out,Food & Drink,-75.09
+2025-12-06,Freelance Invoice,Income,598.82
+2025-12-07,Charity Donation,Charity,-41.77
+2025-12-07,Gas Station Fill-Up,Transport,-53.69
+2025-12-08,Bookstore Purchase,Education,-33.84
+2025-12-08,Internet Provider,Utilities,-65.25
+2025-12-09,Hardware Store,Home Improvement,-91.96
+2025-12-09,Insurance Premium,Insurance,-121.8
+2025-12-10,Salon Visit,Personal Care,-79.6
+2025-12-10,Stock Dividend,Investment Income,40.72
+2025-12-11,Lunch with Colleagues,Food & Drink,-28.86
+2025-12-11,Parking Garage,Transport,-17.51
+2025-12-12,Art Supplies,Entertainment,-35.14
+2025-12-12,Side Gig Payment,Income,181.8
+2025-12-13,Farmer's Market,Groceries,-35.91
+2025-12-13,Pet Store,Pet Care,-37.93
+2025-12-14,Car Wash,Transport,-13.75
+2025-12-14,Online Course,Education,-112.37
+2025-12-15,Savings Transfer,Savings,-338.75
+2025-12-15,Mobile Phone Bill,Utilities,-89.29
+2025-12-16,Tax Refund,Income,166.18
+2025-12-16,Movie Night,Entertainment,-18.42
+2025-12-17,Coffee Beans,Food & Drink,-15.41
+2025-12-17,Yoga Studio,Fitness,-59.74
+2025-12-18,Home Repair Service,Home Improvement,-241.22
+2025-12-18,Office Supplies,Work Expenses,-32.28
+2025-12-19,Car Maintenance,Transport,-304.57
+2025-12-19,Garden Center,Home Improvement,-44.43
+2025-12-20,Friend's Gift,Personal Care,-27.76
+2025-12-20,Consulting Retainer,Income,417.35
+2025-12-21,Restaurant Brunch,Food & Drink,-50.43
+2025-12-21,Pharmacy Refill,Health,-21.22
+2025-12-22,Electric Scooter Charge,Transport,-11.05
+2025-12-22,Cloud Storage,Utilities,-11.78
+2025-12-23,Book Club Snacks,Entertainment,-13.75
+2025-12-23,Childcare Fee,Family,-193.17
+2025-12-24,Water Bill,Utilities,-39.35
+2025-12-24,Freelance Bonus,Income,126.21
+2025-12-25,Cooking Class,Education,-104.52
+2025-12-25,Veterinary Checkup,Pet Care,-106.33
+2025-12-26,Concert Tickets,Entertainment,-170.95
+2025-12-26,Bike Repair,Transport,-67.03
+2025-12-27,Weekend Groceries,Groceries,-121.36
+2025-12-27,Farmer's Market Stall,Side Business,207.01
+2025-12-28,Home Insurance,Insurance,-109.78
+2025-12-28,Donation Drive,Charity,-56.67
+2025-12-29,Public Transit,Transport,-27.58
+2025-12-29,Co-Working Space,Work Expenses,-76.59
+2025-12-30,Interest Earned,Investment Income,11.04
+2025-12-30,End-of-Month Savings,Savings,-408.7
+2026-01-01,Salary Deposit,Income,2822.83
+2026-01-02,Rent Payment,Housing,-1380.86
+2026-01-02,Grocery Run Aisle 5,Groceries,-119.3
+2026-01-03,Morning Coffee,Food & Drink,-6.84
+2026-01-03,Bus Pass Reload,Transport,-42.41
+2026-01-04,Electric Bill,Utilities,-104.04
+2026-01-04,Streaming Subscription,Entertainment,-10.62
+2026-01-05,Pharmacy Visit,Health,-39.37
+2026-01-05,Fitness Club,Fitness,-53.33
+2026-01-06,Restaurant Night Out,Food & Drink,-66.65
+2026-01-06,Freelance Invoice,Income,710.57
+2026-01-07,Charity Donation,Charity,-48.07
+2026-01-07,Gas Station Fill-Up,Transport,-52.35
+2026-01-08,Bookstore Purchase,Education,-26.67
+2026-01-08,Internet Provider,Utilities,-60.93
+2026-01-09,Hardware Store,Home Improvement,-78.19
+2026-01-09,Insurance Premium,Insurance,-133.21
+2026-01-10,Salon Visit,Personal Care,-99.32
+2026-01-10,Stock Dividend,Investment Income,53.16
+2026-01-11,Lunch with Colleagues,Food & Drink,-23.36
+2026-01-11,Parking Garage,Transport,-18.41
+2026-01-12,Art Supplies,Entertainment,-36.94
+2026-01-12,Side Gig Payment,Income,214.74
+2026-01-13,Farmer's Market,Groceries,-51.32
+2026-01-13,Pet Store,Pet Care,-38.08
+2026-01-14,Car Wash,Transport,-14.43
+2026-01-14,Online Course,Education,-81.53
+2026-01-15,Savings Transfer,Savings,-429.73
+2026-01-15,Mobile Phone Bill,Utilities,-60.76
+2026-01-16,Tax Refund,Income,148.4
+2026-01-16,Movie Night,Entertainment,-18.66
+2026-01-17,Coffee Beans,Food & Drink,-19.65
+2026-01-17,Yoga Studio,Fitness,-65.41
+2026-01-18,Home Repair Service,Home Improvement,-232.6
+2026-01-18,Office Supplies,Work Expenses,-28.69
+2026-01-19,Car Maintenance,Transport,-369.16
+2026-01-19,Garden Center,Home Improvement,-57.68
+2026-01-20,Friend's Gift,Personal Care,-37.22
+2026-01-20,Consulting Retainer,Income,535.17
+2026-01-21,Restaurant Brunch,Food & Drink,-41.3
+2026-01-21,Pharmacy Refill,Health,-32.25
+2026-01-22,Electric Scooter Charge,Transport,-10.92
+2026-01-22,Cloud Storage,Utilities,-9.63
+2026-01-23,Book Club Snacks,Entertainment,-15.05
+2026-01-23,Childcare Fee,Family,-227.37
+2026-01-24,Water Bill,Utilities,-43.13
+2026-01-24,Freelance Bonus,Income,146.81
+2026-01-25,Cooking Class,Education,-71.13
+2026-01-25,Veterinary Checkup,Pet Care,-120.6
+2026-01-26,Concert Tickets,Entertainment,-142.38
+2026-01-26,Bike Repair,Transport,-57.27
+2026-01-27,Weekend Groceries,Groceries,-148.19
+2026-01-27,Farmer's Market Stall,Side Business,147.56
+2026-01-28,Home Insurance,Insurance,-118.99
+2026-01-28,Donation Drive,Charity,-68.38
+2026-01-29,Public Transit,Transport,-27.19
+2026-01-29,Co-Working Space,Work Expenses,-68.88
+2026-01-30,Interest Earned,Investment Income,10.95
+2026-01-30,End-of-Month Savings,Savings,-449.38
+2026-02-01,Salary Deposit,Income,3511.39
+2026-02-02,Rent Payment,Housing,-1446.3
+2026-02-02,Grocery Run Aisle 5,Groceries,-122.06
+2026-02-03,Morning Coffee,Food & Drink,-5.43
+2026-02-03,Bus Pass Reload,Transport,-38.47
+2026-02-04,Electric Bill,Utilities,-107.23
+2026-02-04,Streaming Subscription,Entertainment,-15.79
+2026-02-05,Pharmacy Visit,Health,-37.71
+2026-02-05,Fitness Club,Fitness,-41.11
+2026-02-06,Restaurant Night Out,Food & Drink,-60.01
+2026-02-06,Freelance Invoice,Income,614.28
+2026-02-07,Charity Donation,Charity,-47.99
+2026-02-07,Gas Station Fill-Up,Transport,-70.63
+2026-02-08,Bookstore Purchase,Education,-30.85
+2026-02-08,Internet Provider,Utilities,-59.82
+2026-02-09,Hardware Store,Home Improvement,-69.62
+2026-02-09,Insurance Premium,Insurance,-113.69
+2026-02-10,Salon Visit,Personal Care,-87.1
+2026-02-10,Stock Dividend,Investment Income,51.66
+2026-02-11,Lunch with Colleagues,Food & Drink,-33.93
+2026-02-11,Parking Garage,Transport,-16.18
+2026-02-12,Art Supplies,Entertainment,-32.91
+2026-02-12,Side Gig Payment,Income,183.94
+2026-02-13,Farmer's Market,Groceries,-45.44
+2026-02-13,Pet Store,Pet Care,-39.97
+2026-02-14,Car Wash,Transport,-14.99
+2026-02-14,Online Course,Education,-114.83
+2026-02-15,Savings Transfer,Savings,-375.37
+2026-02-15,Mobile Phone Bill,Utilities,-59.85
+2026-02-16,Tax Refund,Income,168.25
+2026-02-16,Movie Night,Entertainment,-27.21
+2026-02-17,Coffee Beans,Food & Drink,-17.31
+2026-02-17,Yoga Studio,Fitness,-47.73
+2026-02-18,Home Repair Service,Home Improvement,-215.28
+2026-02-18,Office Supplies,Work Expenses,-29.47
+2026-02-19,Car Maintenance,Transport,-309.12
+2026-02-19,Garden Center,Home Improvement,-42.49
+2026-02-20,Friend's Gift,Personal Care,-24.75
+2026-02-20,Consulting Retainer,Income,402.19
+2026-02-21,Restaurant Brunch,Food & Drink,-60.01
+2026-02-21,Pharmacy Refill,Health,-29.76
+2026-02-22,Electric Scooter Charge,Transport,-9.5
+2026-02-22,Cloud Storage,Utilities,-10.35
+2026-02-23,Book Club Snacks,Entertainment,-17.78
+2026-02-23,Childcare Fee,Family,-176.3
+2026-02-24,Water Bill,Utilities,-52.86
+2026-02-24,Freelance Bonus,Income,112.36
+2026-02-25,Cooking Class,Education,-83.66
+2026-02-25,Veterinary Checkup,Pet Care,-101.24
+2026-02-26,Concert Tickets,Entertainment,-135.65
+2026-02-26,Bike Repair,Transport,-73.94
+2026-02-27,Weekend Groceries,Groceries,-120.45
+2026-02-27,Farmer's Market Stall,Side Business,145.54
+2026-02-28,Home Insurance,Insurance,-129.58
+2026-02-28,Donation Drive,Charity,-72.81
+2026-02-28,Public Transit,Transport,-23.32
+2026-02-28,Co-Working Space,Work Expenses,-105.29
+2026-02-28,Interest Earned,Investment Income,10.53
+2026-02-28,End-of-Month Savings,Savings,-508.77
+2026-03-01,Salary Deposit,Income,3432.43
+2026-03-02,Rent Payment,Housing,-1826.1
+2026-03-02,Grocery Run Aisle 5,Groceries,-141.8
+2026-03-03,Morning Coffee,Food & Drink,-4.92
+2026-03-03,Bus Pass Reload,Transport,-40.39
+2026-03-04,Electric Bill,Utilities,-71.04
+2026-03-04,Streaming Subscription,Entertainment,-10.92
+2026-03-05,Pharmacy Visit,Health,-39.84
+2026-03-05,Fitness Club,Fitness,-41.69
+2026-03-06,Restaurant Night Out,Food & Drink,-71.03
+2026-03-06,Freelance Invoice,Income,800.51
+2026-03-07,Charity Donation,Charity,-47.19
+2026-03-07,Gas Station Fill-Up,Transport,-71.38
+2026-03-08,Bookstore Purchase,Education,-33.26
+2026-03-08,Internet Provider,Utilities,-65.0
+2026-03-09,Hardware Store,Home Improvement,-60.94
+2026-03-09,Insurance Premium,Insurance,-136.07
+2026-03-10,Salon Visit,Personal Care,-81.69
+2026-03-10,Stock Dividend,Investment Income,56.58
+2026-03-11,Lunch with Colleagues,Food & Drink,-30.18
+2026-03-11,Parking Garage,Transport,-19.68
+2026-03-12,Art Supplies,Entertainment,-27.27
+2026-03-12,Side Gig Payment,Income,219.82
+2026-03-13,Farmer's Market,Groceries,-50.2
+2026-03-13,Pet Store,Pet Care,-42.58
+2026-03-14,Car Wash,Transport,-13.6
+2026-03-14,Online Course,Education,-86.47
+2026-03-15,Savings Transfer,Savings,-352.81
+2026-03-15,Mobile Phone Bill,Utilities,-59.72
+2026-03-16,Tax Refund,Income,136.93
+2026-03-16,Movie Night,Entertainment,-27.96
+2026-03-17,Coffee Beans,Food & Drink,-17.25
+2026-03-17,Yoga Studio,Fitness,-49.35
+2026-03-18,Home Repair Service,Home Improvement,-246.95
+2026-03-18,Office Supplies,Work Expenses,-35.39
+2026-03-19,Car Maintenance,Transport,-315.24
+2026-03-19,Garden Center,Home Improvement,-49.47
+2026-03-20,Friend's Gift,Personal Care,-29.09
+2026-03-20,Consulting Retainer,Income,546.79
+2026-03-21,Restaurant Brunch,Food & Drink,-45.15
+2026-03-21,Pharmacy Refill,Health,-30.64
+2026-03-22,Electric Scooter Charge,Transport,-9.31
+2026-03-22,Cloud Storage,Utilities,-8.04
+2026-03-23,Book Club Snacks,Entertainment,-14.72
+2026-03-23,Childcare Fee,Family,-201.11
+2026-03-24,Water Bill,Utilities,-40.25
+2026-03-24,Freelance Bonus,Income,137.57
+2026-03-25,Cooking Class,Education,-95.71
+2026-03-25,Veterinary Checkup,Pet Care,-106.25
+2026-03-26,Concert Tickets,Entertainment,-142.98
+2026-03-26,Bike Repair,Transport,-61.83
+2026-03-27,Weekend Groceries,Groceries,-151.84
+2026-03-27,Farmer's Market Stall,Side Business,144.04
+2026-03-28,Home Insurance,Insurance,-120.43
+2026-03-28,Donation Drive,Charity,-60.79
+2026-03-29,Public Transit,Transport,-24.7
+2026-03-29,Co-Working Space,Work Expenses,-88.92
+2026-03-30,Interest Earned,Investment Income,12.0
+2026-03-30,End-of-Month Savings,Savings,-445.29
+2026-04-01,Salary Deposit,Income,2569.18
+2026-04-02,Rent Payment,Housing,-1201.02
+2026-04-02,Grocery Run Aisle 5,Groceries,-118.97
+2026-04-03,Morning Coffee,Food & Drink,-4.7
+2026-04-03,Bus Pass Reload,Transport,-42.5
+2026-04-04,Electric Bill,Utilities,-109.32
+2026-04-04,Streaming Subscription,Entertainment,-13.83
+2026-04-05,Pharmacy Visit,Health,-34.93
+2026-04-05,Fitness Club,Fitness,-44.09
+2026-04-06,Restaurant Night Out,Food & Drink,-75.5
+2026-04-06,Freelance Invoice,Income,695.85
+2026-04-07,Charity Donation,Charity,-35.03
+2026-04-07,Gas Station Fill-Up,Transport,-63.57
+2026-04-08,Bookstore Purchase,Education,-35.71
+2026-04-08,Internet Provider,Utilities,-52.53
+2026-04-09,Hardware Store,Home Improvement,-73.91
+2026-04-09,Insurance Premium,Insurance,-100.8
+2026-04-10,Salon Visit,Personal Care,-97.42
+2026-04-10,Stock Dividend,Investment Income,53.05
+2026-04-11,Lunch with Colleagues,Food & Drink,-28.68
+2026-04-11,Parking Garage,Transport,-18.45
+2026-04-12,Art Supplies,Entertainment,-30.12
+2026-04-12,Side Gig Payment,Income,225.87
+2026-04-13,Farmer's Market,Groceries,-49.12
+2026-04-13,Pet Store,Pet Care,-38.09
+2026-04-14,Car Wash,Transport,-13.63
+2026-04-14,Online Course,Education,-107.97
+2026-04-15,Savings Transfer,Savings,-453.15
+2026-04-15,Mobile Phone Bill,Utilities,-81.85
+2026-04-16,Tax Refund,Income,143.89
+2026-04-16,Movie Night,Entertainment,-23.58
+2026-04-17,Coffee Beans,Food & Drink,-16.9
+2026-04-17,Yoga Studio,Fitness,-66.02
+2026-04-18,Home Repair Service,Home Improvement,-234.19
+2026-04-18,Office Supplies,Work Expenses,-31.66
+2026-04-19,Car Maintenance,Transport,-341.22
+2026-04-19,Garden Center,Home Improvement,-50.83
+2026-04-20,Friend's Gift,Personal Care,-34.43
+2026-04-20,Consulting Retainer,Income,428.95
+2026-04-21,Restaurant Brunch,Food & Drink,-44.9
+2026-04-21,Pharmacy Refill,Health,-25.38
+2026-04-22,Electric Scooter Charge,Transport,-8.73
+2026-04-22,Cloud Storage,Utilities,-11.75
+2026-04-23,Book Club Snacks,Entertainment,-13.82
+2026-04-23,Childcare Fee,Family,-239.6
+2026-04-24,Water Bill,Utilities,-39.25
+2026-04-24,Freelance Bonus,Income,141.56
+2026-04-25,Cooking Class,Education,-103.28
+2026-04-25,Veterinary Checkup,Pet Care,-119.36
+2026-04-26,Concert Tickets,Entertainment,-139.04
+2026-04-26,Bike Repair,Transport,-59.69
+2026-04-27,Weekend Groceries,Groceries,-136.96
+2026-04-27,Farmer's Market Stall,Side Business,177.22
+2026-04-28,Home Insurance,Insurance,-95.61
+2026-04-28,Donation Drive,Charity,-71.12
+2026-04-29,Public Transit,Transport,-23.95
+2026-04-29,Co-Working Space,Work Expenses,-86.65
+2026-04-30,Interest Earned,Investment Income,11.33
+2026-04-30,End-of-Month Savings,Savings,-427.05
+2026-05-01,Salary Deposit,Income,3375.59
+2026-05-02,Rent Payment,Housing,-1426.54
+2026-05-02,Grocery Run Aisle 5,Groceries,-144.66
+2026-05-03,Morning Coffee,Food & Drink,-7.3
+2026-05-03,Bus Pass Reload,Transport,-39.61
+2026-05-04,Electric Bill,Utilities,-95.89
+2026-05-04,Streaming Subscription,Entertainment,-14.34
+2026-05-05,Pharmacy Visit,Health,-33.42
+2026-05-05,Fitness Club,Fitness,-47.26
+2026-05-06,Restaurant Night Out,Food & Drink,-76.04
+2026-05-06,Freelance Invoice,Income,618.85
+2026-05-07,Charity Donation,Charity,-39.12
+2026-05-07,Gas Station Fill-Up,Transport,-72.5
+2026-05-08,Bookstore Purchase,Education,-36.12
+2026-05-08,Internet Provider,Utilities,-58.65
+2026-05-09,Hardware Store,Home Improvement,-73.61
+2026-05-09,Insurance Premium,Insurance,-124.96
+2026-05-10,Salon Visit,Personal Care,-94.17
+2026-05-10,Stock Dividend,Investment Income,48.69
+2026-05-11,Lunch with Colleagues,Food & Drink,-24.29
+2026-05-11,Parking Garage,Transport,-20.19
+2026-05-12,Art Supplies,Entertainment,-27.54
+2026-05-12,Side Gig Payment,Income,231.3
+2026-05-13,Farmer's Market,Groceries,-53.28
+2026-05-13,Pet Store,Pet Care,-35.73
+2026-05-14,Car Wash,Transport,-15.28
+2026-05-14,Online Course,Education,-108.02
+2026-05-15,Savings Transfer,Savings,-378.35
+2026-05-15,Mobile Phone Bill,Utilities,-74.32
+2026-05-16,Tax Refund,Income,164.83
+2026-05-16,Movie Night,Entertainment,-24.65
+2026-05-17,Coffee Beans,Food & Drink,-22.12
+2026-05-17,Yoga Studio,Fitness,-58.3
+2026-05-18,Home Repair Service,Home Improvement,-189.46
+2026-05-18,Office Supplies,Work Expenses,-28.29
+2026-05-19,Car Maintenance,Transport,-308.33
+2026-05-19,Garden Center,Home Improvement,-46.53
+2026-05-20,Friend's Gift,Personal Care,-25.13
+2026-05-20,Consulting Retainer,Income,409.89
+2026-05-21,Restaurant Brunch,Food & Drink,-40.43
+2026-05-21,Pharmacy Refill,Health,-23.08
+2026-05-22,Electric Scooter Charge,Transport,-7.94
+2026-05-22,Cloud Storage,Utilities,-8.15
+2026-05-23,Book Club Snacks,Entertainment,-14.44
+2026-05-23,Childcare Fee,Family,-217.91
+2026-05-24,Water Bill,Utilities,-50.92
+2026-05-24,Freelance Bonus,Income,104.34
+2026-05-25,Cooking Class,Education,-104.53
+2026-05-25,Veterinary Checkup,Pet Care,-121.26
+2026-05-26,Concert Tickets,Entertainment,-150.18
+2026-05-26,Bike Repair,Transport,-60.36
+2026-05-27,Weekend Groceries,Groceries,-114.36
+2026-05-27,Farmer's Market Stall,Side Business,145.89
+2026-05-28,Home Insurance,Insurance,-129.82
+2026-05-28,Donation Drive,Charity,-61.17
+2026-05-29,Public Transit,Transport,-22.11
+2026-05-29,Co-Working Space,Work Expenses,-70.0
+2026-05-30,Interest Earned,Investment Income,11.17
+2026-05-30,End-of-Month Savings,Savings,-388.4
+2026-06-01,Salary Deposit,Income,3434.23
+2026-06-02,Rent Payment,Housing,-1206.59
+2026-06-02,Grocery Run Aisle 5,Groceries,-115.58
+2026-06-03,Morning Coffee,Food & Drink,-5.36
+2026-06-03,Bus Pass Reload,Transport,-51.85
+2026-06-04,Electric Bill,Utilities,-86.02
+2026-06-04,Streaming Subscription,Entertainment,-11.08
+2026-06-05,Pharmacy Visit,Health,-30.49
+2026-06-05,Fitness Club,Fitness,-62.25
+2026-06-06,Restaurant Night Out,Food & Drink,-52.84
+2026-06-06,Freelance Invoice,Income,735.56
+2026-06-07,Charity Donation,Charity,-39.82
+2026-06-07,Gas Station Fill-Up,Transport,-58.28
+2026-06-08,Bookstore Purchase,Education,-38.06
+2026-06-08,Internet Provider,Utilities,-75.96
+2026-06-09,Hardware Store,Home Improvement,-77.65
+2026-06-09,Insurance Premium,Insurance,-102.39
+2026-06-10,Salon Visit,Personal Care,-84.76
+2026-06-10,Stock Dividend,Investment Income,43.78
+2026-06-11,Lunch with Colleagues,Food & Drink,-27.9
+2026-06-11,Parking Garage,Transport,-18.53
+2026-06-12,Art Supplies,Entertainment,-29.19
+2026-06-12,Side Gig Payment,Income,250.05
+2026-06-13,Farmer's Market,Groceries,-34.96
+2026-06-13,Pet Store,Pet Care,-33.95
+2026-06-14,Car Wash,Transport,-16.97
+2026-06-14,Online Course,Education,-81.05
+2026-06-15,Savings Transfer,Savings,-442.15
+2026-06-15,Mobile Phone Bill,Utilities,-58.21
+2026-06-16,Tax Refund,Income,175.22
+2026-06-16,Movie Night,Entertainment,-19.84
+2026-06-17,Coffee Beans,Food & Drink,-18.63
+2026-06-17,Yoga Studio,Fitness,-46.79
+2026-06-18,Home Repair Service,Home Improvement,-182.55
+2026-06-18,Office Supplies,Work Expenses,-41.51
+2026-06-19,Car Maintenance,Transport,-264.04
+2026-06-19,Garden Center,Home Improvement,-56.05
+2026-06-20,Friend's Gift,Personal Care,-30.19
+2026-06-20,Consulting Retainer,Income,446.83
+2026-06-21,Restaurant Brunch,Food & Drink,-43.23
+2026-06-21,Pharmacy Refill,Health,-32.69
+2026-06-22,Electric Scooter Charge,Transport,-11.95
+2026-06-22,Cloud Storage,Utilities,-8.29
+2026-06-23,Book Club Snacks,Entertainment,-19.24
+2026-06-23,Childcare Fee,Family,-212.54
+2026-06-24,Water Bill,Utilities,-46.76
+2026-06-24,Freelance Bonus,Income,103.4
+2026-06-25,Cooking Class,Education,-73.36
+2026-06-25,Veterinary Checkup,Pet Care,-149.45
+2026-06-26,Concert Tickets,Entertainment,-174.25
+2026-06-26,Bike Repair,Transport,-81.2
+2026-06-27,Weekend Groceries,Groceries,-144.08
+2026-06-27,Farmer's Market Stall,Side Business,163.06
+2026-06-28,Home Insurance,Insurance,-106.21
+2026-06-28,Donation Drive,Charity,-65.26
+2026-06-29,Public Transit,Transport,-25.19
+2026-06-29,Co-Working Space,Work Expenses,-76.3
+2026-06-30,Interest Earned,Investment Income,15.87
+2026-06-30,End-of-Month Savings,Savings,-465.3
+2026-07-01,Salary Deposit,Income,2589.06
+2026-07-02,Rent Payment,Housing,-1705.93
+2026-07-02,Grocery Run Aisle 5,Groceries,-129.79
+2026-07-03,Morning Coffee,Food & Drink,-5.24
+2026-07-03,Bus Pass Reload,Transport,-38.33
+2026-07-04,Electric Bill,Utilities,-94.92
+2026-07-04,Streaming Subscription,Entertainment,-13.26
+2026-07-05,Pharmacy Visit,Health,-36.24
+2026-07-05,Fitness Club,Fitness,-59.62
+2026-07-06,Restaurant Night Out,Food & Drink,-59.44
+2026-07-06,Freelance Invoice,Income,739.15
+2026-07-07,Charity Donation,Charity,-37.54
+2026-07-07,Gas Station Fill-Up,Transport,-59.38
+2026-07-08,Bookstore Purchase,Education,-36.53
+2026-07-08,Internet Provider,Utilities,-75.36
+2026-07-09,Hardware Store,Home Improvement,-77.58
+2026-07-09,Insurance Premium,Insurance,-111.63
+2026-07-10,Salon Visit,Personal Care,-90.76
+2026-07-10,Stock Dividend,Investment Income,42.35
+2026-07-11,Lunch with Colleagues,Food & Drink,-25.73
+2026-07-11,Parking Garage,Transport,-17.55
+2026-07-12,Art Supplies,Entertainment,-34.89
+2026-07-12,Side Gig Payment,Income,181.07
+2026-07-13,Farmer's Market,Groceries,-48.17
+2026-07-13,Pet Store,Pet Care,-33.15
+2026-07-14,Car Wash,Transport,-12.03
+2026-07-14,Online Course,Education,-95.89
+2026-07-15,Savings Transfer,Savings,-325.55
+2026-07-15,Mobile Phone Bill,Utilities,-62.58
+2026-07-16,Tax Refund,Income,137.07
+2026-07-16,Movie Night,Entertainment,-25.3
+2026-07-17,Coffee Beans,Food & Drink,-15.56
+2026-07-17,Yoga Studio,Fitness,-61.66
+2026-07-18,Home Repair Service,Home Improvement,-175.28
+2026-07-18,Office Supplies,Work Expenses,-37.49
+2026-07-19,Car Maintenance,Transport,-388.8
+2026-07-19,Garden Center,Home Improvement,-45.72
+2026-07-20,Friend's Gift,Personal Care,-34.85
+2026-07-20,Consulting Retainer,Income,436.12
+2026-07-21,Restaurant Brunch,Food & Drink,-52.49
+2026-07-21,Pharmacy Refill,Health,-24.38
+2026-07-22,Electric Scooter Charge,Transport,-9.07
+2026-07-22,Cloud Storage,Utilities,-8.76
+2026-07-23,Book Club Snacks,Entertainment,-19.74
+2026-07-23,Childcare Fee,Family,-177.82
+2026-07-24,Water Bill,Utilities,-49.9
+2026-07-24,Freelance Bonus,Income,141.31
+2026-07-25,Cooking Class,Education,-102.49
+2026-07-25,Veterinary Checkup,Pet Care,-103.78
+2026-07-26,Concert Tickets,Entertainment,-167.76
+2026-07-26,Bike Repair,Transport,-81.22
+2026-07-27,Weekend Groceries,Groceries,-135.26
+2026-07-27,Farmer's Market Stall,Side Business,183.77
+2026-07-28,Home Insurance,Insurance,-126.26
+2026-07-28,Donation Drive,Charity,-54.11
+2026-07-29,Public Transit,Transport,-21.76
+2026-07-29,Co-Working Space,Work Expenses,-78.7
+2026-07-30,Interest Earned,Investment Income,15.39
+2026-07-30,End-of-Month Savings,Savings,-402.07
+2026-08-01,Salary Deposit,Income,2965.07
+2026-08-02,Rent Payment,Housing,-1432.5
+2026-08-02,Grocery Run Aisle 5,Groceries,-148.24
+2026-08-03,Morning Coffee,Food & Drink,-6.61
+2026-08-03,Bus Pass Reload,Transport,-54.04
+2026-08-04,Electric Bill,Utilities,-80.55
+2026-08-04,Streaming Subscription,Entertainment,-13.75
+2026-08-05,Pharmacy Visit,Health,-45.54
+2026-08-05,Fitness Club,Fitness,-58.23
+2026-08-06,Restaurant Night Out,Food & Drink,-76.16
+2026-08-06,Freelance Invoice,Income,736.6
+2026-08-07,Charity Donation,Charity,-41.82
+2026-08-07,Gas Station Fill-Up,Transport,-64.6
+2026-08-08,Bookstore Purchase,Education,-39.05
+2026-08-08,Internet Provider,Utilities,-66.74
+2026-08-09,Hardware Store,Home Improvement,-75.04
+2026-08-09,Insurance Premium,Insurance,-132.03
+2026-08-10,Salon Visit,Personal Care,-86.99
+2026-08-10,Stock Dividend,Investment Income,50.04
+2026-08-11,Lunch with Colleagues,Food & Drink,-31.16
+2026-08-11,Parking Garage,Transport,-18.97
+2026-08-12,Art Supplies,Entertainment,-25.52
+2026-08-12,Side Gig Payment,Income,261.08
+2026-08-13,Farmer's Market,Groceries,-38.78
+2026-08-13,Pet Store,Pet Care,-36.22
+2026-08-14,Car Wash,Transport,-15.05
+2026-08-14,Online Course,Education,-111.16
+2026-08-15,Savings Transfer,Savings,-471.34
+2026-08-15,Mobile Phone Bill,Utilities,-67.33
+2026-08-16,Tax Refund,Income,182.42
+2026-08-16,Movie Night,Entertainment,-23.72
+2026-08-17,Coffee Beans,Food & Drink,-17.0
+2026-08-17,Yoga Studio,Fitness,-46.23
+2026-08-18,Home Repair Service,Home Improvement,-237.79
+2026-08-18,Office Supplies,Work Expenses,-31.67
+2026-08-19,Car Maintenance,Transport,-382.07
+2026-08-19,Garden Center,Home Improvement,-39.55
+2026-08-20,Friend's Gift,Personal Care,-32.5
+2026-08-20,Consulting Retainer,Income,505.24
+2026-08-21,Restaurant Brunch,Food & Drink,-53.59
+2026-08-21,Pharmacy Refill,Health,-29.73
+2026-08-22,Electric Scooter Charge,Transport,-11.17
+2026-08-22,Cloud Storage,Utilities,-11.42
+2026-08-23,Book Club Snacks,Entertainment,-14.83
+2026-08-23,Childcare Fee,Family,-231.05
+2026-08-24,Water Bill,Utilities,-49.7
+2026-08-24,Freelance Bonus,Income,133.59
+2026-08-25,Cooking Class,Education,-99.89
+2026-08-25,Veterinary Checkup,Pet Care,-123.12
+2026-08-26,Concert Tickets,Entertainment,-139.69
+2026-08-26,Bike Repair,Transport,-56.96
+2026-08-27,Weekend Groceries,Groceries,-151.29
+2026-08-27,Farmer's Market Stall,Side Business,151.93
+2026-08-28,Home Insurance,Insurance,-124.62
+2026-08-28,Donation Drive,Charity,-52.2
+2026-08-29,Public Transit,Transport,-18.89
+2026-08-29,Co-Working Space,Work Expenses,-84.27
+2026-08-30,Interest Earned,Investment Income,10.5
+2026-08-30,End-of-Month Savings,Savings,-541.89
