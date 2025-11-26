@@ -49,6 +49,12 @@ SUBSCRIPTION_DEFAULT_INSTRUCTIONS = (
     "total monthly cost, and highlight any unusual spikes or cancellations."
 )
 
+COMPARISON_DEFAULT_INSTRUCTIONS = (
+    "Focus on the five largest expense swings, note any new or discontinued "
+    "subscriptions, and summarize the total change in income, expenses, and net "
+    "savings between the two periods."
+)
+
 
 @dataclass
 class Transaction:
@@ -527,11 +533,6 @@ def run_statement_comparison(
         "practical follow-up actions."
     )
     agent = build_budget_agent(system_prompt=comparison_system_prompt)
-    default_instructions = (
-        "Focus on the five largest expense swings, note any new or discontinued "
-        "subscriptions, and summarize the total change in income, expenses, and net "
-        "savings between the two periods."
-    )
     combined_prompt = (
         "The primary bank statement is located at: "
         f"{primary_statement_path}. "
@@ -540,7 +541,7 @@ def run_statement_comparison(
         "Use load_statement on each path and call compare_statements with both "
         "paths before drafting your answer. Report amounts in USD with appropriate "
         "signs (prefix expenses with a minus if needed). "
-        f"Additional instructions: {instructions or default_instructions}"
+        f"Additional instructions: {instructions or COMPARISON_DEFAULT_INSTRUCTIONS}"
     )
     result = invoke_agent(agent, combined_prompt)
     logger.info(
@@ -816,14 +817,27 @@ def _build_html_document(
     export_path: Optional[str] = None,
     header_title: str = "Budget Analysis Report",
     header_subtitle: str = "Prepared by the Bank Statement Budgeting Agent",
+    secondary_statement_path: Optional[str] = None,
 ) -> str:
     """Construct a polished standalone HTML document for the report."""
 
+    try:
+        primary_label = Path(statement_path).name
+    except Exception:
+        primary_label = statement_path
     rows = [
         f"<tr><th>Generated</th><td>{escape(_format_human_timestamp(generated_at))}</td></tr>",
-        f"<tr><th>Statement</th><td>{escape(Path(statement_path).name)}</td></tr>",
+        f"<tr><th>Statement</th><td>{escape(primary_label)}</td></tr>",
         f"<tr><th>Instructions</th><td>{escape(instructions)}</td></tr>",
     ]
+    if secondary_statement_path:
+        try:
+            secondary_label = Path(secondary_statement_path).name
+        except Exception:
+            secondary_label = secondary_statement_path
+        rows.append(
+            f"<tr><th>Comparison</th><td>{escape(secondary_label)}</td></tr>"
+        )
     if export_path:
         relative = _to_workspace_relative(export_path)
         rows.append(
@@ -940,6 +954,58 @@ def _build_html_document(
             margin-bottom: 0.75rem;
             font-size: 0.95rem;
         }}
+        .comparison-grid {{
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-top: 2rem;
+        }}
+        .comparison-card {{
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+        }}
+        .comparison-card h3 {{
+            margin: 0 0 0.75rem;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }}
+        .comparison-card__subtitle {{
+            margin: 0 0 1rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }}
+        .comparison-stats {{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }}
+        .comparison-stats li {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #eef2fb;
+        }}
+        .comparison-stats li:last-child {{
+            border-bottom: none;
+        }}
+        .comparison-value {{
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }}
+        .comparison-delta-positive {{
+            color: #2e7d32;
+        }}
+        .comparison-delta-negative {{
+            color: #d1394a;
+        }}
+        .comparison-delta-neutral {{
+            color: var(--muted);
+        }}
         table.tx-table {{
             width: 100%;
             border-collapse: collapse;
@@ -974,6 +1040,33 @@ def _build_html_document(
             text-align: right;
             font-weight: 600;
             color: var(--text);
+        }}
+        table.comparison-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+        }}
+        table.comparison-table thead th {{
+            text-align: left;
+            padding: 0.6rem 0.5rem;
+            color: var(--muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }}
+        table.comparison-table tbody td {{
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #eef2fb;
+            font-variant-numeric: tabular-nums;
+        }}
+        table.comparison-table tbody td:first-child {{
+            font-variant-numeric: normal;
+        }}
+        table.comparison-table tbody td:not(:first-child) {{
+            text-align: right;
+        }}
+        table.comparison-table tbody tr:last-child td {{
+            border-bottom: none;
         }}
                 .trace-grid {{
             display: flex;
@@ -1138,6 +1231,11 @@ def _format_currency(amount: float) -> str:
     return f"{sign}${abs(amount):,.2f}"
 
 
+def _format_delta(amount: float) -> str:
+    formatted = _format_currency(amount)
+    return f"+{formatted}" if amount > 0 else formatted
+
+
 def _extract_transactions(text: str) -> Tuple[List[Dict[str, Any]], str]:
     transactions: List[Dict[str, Any]] = []
     kept_lines: List[str] = []
@@ -1202,6 +1300,164 @@ def _render_transaction_categories(transactions: List[Dict[str, Any]]) -> str:
         )
         sections.append("</article>")
     sections.append("</div>")
+    return "".join(sections)
+
+
+def _extract_comparison_payload(messages: List[BaseMessage]) -> Optional[Dict[str, Any]]:
+    payload: Optional[Dict[str, Any]] = None
+    for msg in messages:
+        if isinstance(msg, ToolMessage) and msg.name == "compare_statements":
+            if isinstance(msg.content, dict):
+                payload = dict(msg.content)
+                continue
+            raw_text = _coerce_message_text(msg.content).strip()
+            if not raw_text:
+                continue
+            try:
+                parsed = json.loads(raw_text)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                payload = parsed
+    return payload
+
+
+def _render_comparison_sections(payload: Dict[str, Any]) -> str:
+    if not payload:
+        return ""
+
+    def _to_float(value: Any) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _label(path_str: Any, fallback: str) -> str:
+        if not isinstance(path_str, str) or not path_str:
+            return fallback
+        try:
+            return Path(path_str).name or fallback
+        except Exception:
+            return fallback
+
+    def _delta_class(value: float) -> str:
+        if value > 0:
+            return "comparison-value comparison-delta-positive"
+        if value < 0:
+            return "comparison-value comparison-delta-negative"
+        return "comparison-value comparison-delta-neutral"
+
+    primary = payload.get("primary", {}) if isinstance(payload.get("primary"), dict) else {}
+    comparison = payload.get("comparison", {}) if isinstance(payload.get("comparison"), dict) else {}
+    difference = payload.get("difference", {}) if isinstance(payload.get("difference"), dict) else {}
+
+    primary_totals = primary.get("totals", {}) if isinstance(primary.get("totals"), dict) else {}
+    comparison_totals = (
+        comparison.get("totals", {}) if isinstance(comparison.get("totals"), dict) else {}
+    )
+
+    cards: List[str] = ["<div class=\"comparison-grid\">"]
+
+    cards.append("<article class=\"comparison-card\">")
+    cards.append("<h3>Primary Statement</h3>")
+    cards.append(
+        f"<p class=\"comparison-card__subtitle\">{escape(_label(primary.get('path'), 'Primary'))}</p>"
+    )
+    cards.append("<ul class=\"comparison-stats\">")
+    cards.append(
+        f"<li><span>Income</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(primary_totals.get('income'))))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Expenses</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(primary_totals.get('expenses'))))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Net</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(primary_totals.get('net'))))}</span></li>"
+    )
+    cards.append("</ul>")
+    cards.append("</article>")
+
+    cards.append("<article class=\"comparison-card\">")
+    cards.append("<h3>Comparison Statement</h3>")
+    cards.append(
+        f"<p class=\"comparison-card__subtitle\">{escape(_label(comparison.get('path'), 'Comparison'))}</p>"
+    )
+    cards.append("<ul class=\"comparison-stats\">")
+    cards.append(
+        f"<li><span>Income</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(comparison_totals.get('income'))))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Expenses</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(comparison_totals.get('expenses'))))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Net</span><span class=\"comparison-value\">{escape(_format_currency(_to_float(comparison_totals.get('net'))))}</span></li>"
+    )
+    cards.append("</ul>")
+    cards.append("</article>")
+
+    delta_income = _to_float(difference.get("income_change"))
+    delta_expense = _to_float(difference.get("expense_change"))
+    delta_net = _to_float(difference.get("net_change"))
+
+    cards.append("<article class=\"comparison-card\">")
+    cards.append("<h3>Period Change</h3>")
+    cards.append("<ul class=\"comparison-stats\">")
+    cards.append(
+        f"<li><span>Income</span><span class=\"{_delta_class(delta_income)}\">{escape(_format_delta(delta_income))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Expenses</span><span class=\"{_delta_class(delta_expense)}\">{escape(_format_delta(delta_expense))}</span></li>"
+    )
+    cards.append(
+        f"<li><span>Net</span><span class=\"{_delta_class(delta_net)}\">{escape(_format_delta(delta_net))}</span></li>"
+    )
+    cards.append("</ul>")
+    cards.append("</article>")
+
+    cards.append("</div>")
+
+    sections: List[str] = cards
+
+    category_rows = payload.get("category_deltas")
+    if isinstance(category_rows, list) and category_rows:
+        sorted_rows = sorted(
+            [row for row in category_rows if isinstance(row, dict)],
+            key=lambda row: max(
+                abs(_to_float(row.get("expense_change"))),
+                abs(_to_float(row.get("income_change"))),
+            ),
+            reverse=True,
+        )
+        if sorted_rows:
+            sections.append(
+                "<table class=\"comparison-table\"><thead><tr>"
+                "<th>Category</th><th>Baseline Income</th><th>Baseline Expenses" \
+                "</th><th>Comparison Income</th><th>Comparison Expenses</th>" \
+                "<th>Income Change</th><th>Expense Change</th>" \
+                "</tr></thead><tbody>"
+            )
+            for entry in sorted_rows:
+                category = escape(str(entry.get("category", "Uncategorized")))
+                baseline_income = _format_currency(_to_float(entry.get("baseline_income")))
+                baseline_expenses = _format_currency(_to_float(entry.get("baseline_expenses")))
+                comparison_income = _format_currency(_to_float(entry.get("comparison_income")))
+                comparison_expenses = _format_currency(_to_float(entry.get("comparison_expenses")))
+                inc_change_val = _to_float(entry.get("income_change"))
+                exp_change_val = _to_float(entry.get("expense_change"))
+                income_change = _format_delta(inc_change_val)
+                expense_change = _format_delta(exp_change_val)
+                sections.append(
+                    "<tr>"
+                    f"<td>{category}</td>"
+                    f"<td>{escape(baseline_income)}</td>"
+                    f"<td>{escape(baseline_expenses)}</td>"
+                    f"<td>{escape(comparison_income)}</td>"
+                    f"<td>{escape(comparison_expenses)}</td>"
+                    f"<td class=\"{_delta_class(inc_change_val)}\">{escape(income_change)}</td>"
+                    f"<td class=\"{_delta_class(exp_change_val)}\">{escape(expense_change)}</td>"
+                    "</tr>"
+                )
+            sections.append("</tbody></table>")
+
     return "".join(sections)
 
 
@@ -1370,6 +1626,52 @@ def _render_subscription_sections(subscriptions: List[Dict[str, Any]]) -> str:
     return "".join(sections)
 
 
+def _generate_comparison_report(
+    primary_path: str,
+    comparison_path: str,
+    instructions: Optional[str],
+    outputs_dir: Path,
+) -> Tuple[Path, Dict[str, Any]]:
+    """Run a comparison analysis and persist the narrative to an HTML report."""
+
+    applied_instructions = instructions or COMPARISON_DEFAULT_INSTRUCTIONS
+    result = run_statement_comparison(primary_path, comparison_path, instructions)
+    generated_at = datetime.now(timezone.utc)
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    output_file = outputs_dir / f"statement_comparison_result_{timestamp}.html"
+
+    final_reply = extract_final_reply(result).strip()
+    if final_reply:
+        narrative_html = _format_summary_html(_shorten_paths_in_text(final_reply))
+    else:
+        narrative_html = "<p><em>No comparison summary was returned.</em></p>"
+
+    payload = _extract_comparison_payload(result.get("messages", []))
+    sections_html = _render_comparison_sections(payload or {})
+    summary_html = narrative_html + sections_html
+
+    trace_block = format_tool_trace(result.get("messages", []))
+    trace_html = _format_trace_html(trace_block)
+
+    document = _build_html_document(
+        generated_at=generated_at,
+        statement_path=primary_path,
+        instructions=applied_instructions,
+        summary_html=summary_html,
+        trace_html=trace_html,
+        header_title="Statement Comparison Report",
+        header_subtitle="Prepared by the Bank Statement Budgeting Agent",
+        secondary_statement_path=comparison_path,
+    )
+
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    with output_file.open("w", encoding="utf-8") as handle:
+        handle.write(document)
+
+    logger.info("Statement comparison report saved to %s", output_file)
+    return output_file, result
+
+
 def _generate_subscription_report(
     statement_path: str, instructions: Optional[str], outputs_dir: Path
 ) -> Tuple[Path, Dict[str, Any]]:
@@ -1530,8 +1832,9 @@ def _run_statement_comparison_flow(
     _: str,
     default_primary: Path,
     default_comparison: Path,
+    outputs_dir: Path,
 ) -> None:
-    """Compare two statements and display the agent's narrative."""
+    """Compare two statements and persist the agent's findings to an HTML report."""
 
     print("\nComparing statements...\n")
     primary_default_display = _to_workspace_relative(str(default_primary))
@@ -1575,14 +1878,14 @@ def _run_statement_comparison_flow(
     instructions = custom_instructions or None
 
     try:
-        result = run_statement_comparison(
-            str(primary_path), str(comparison_path), instructions
+        report_path, result = _generate_comparison_report(
+            str(primary_path),
+            str(comparison_path),
+            instructions,
+            outputs_dir,
         )
-        reply = extract_final_reply(result).strip()
-        if reply:
-            _render_cli_output("Comparison", reply)
-        else:
-            print("The agent did not return a response.\n")
+        relative_report = _to_workspace_relative(str(report_path))
+        print(f"\nComparison report saved to outputs: {relative_report}\n")
         trace = format_tool_trace(result.get("messages", []))
         if trace:
             show_trace = input("Show tool trace? (yes/[no]): ").strip().lower()
@@ -1653,6 +1956,7 @@ def main() -> None:
                 statement_path,
                 default_statement,
                 comparison_sample_statement,
+                outputs_dir,
             )
         elif choice in {"6", "c", "change"}:
             statement_path = _prompt_statement_path(default_statement)
