@@ -823,7 +823,7 @@ def _build_html_document(
     trace_html: str,
     export_path: Optional[str] = None,
     header_title: str = "Budget Analysis Report",
-    header_subtitle: str = "Prepared by the Bank Statement Budgeting Agent",
+    header_subtitle: str = "Prepared by Spend Scout",
     secondary_statement_path: Optional[str] = None,
 ) -> str:
     """Construct a polished standalone HTML document for the report."""
@@ -1232,6 +1232,17 @@ _SUBSCRIPTION_FREQ_KEYWORDS = [
     ("every other month", "Every other month"),
 ]
 
+_SUBSCRIPTION_METRIC_PHRASES = [
+    "average monthly spend",
+    "average monthly cost",
+    "monthly cost",
+    "monthly spend",
+    "average spend",
+    "amount",
+    "estimated monthly",
+    "average monthly",
+]
+
 
 def _format_currency(amount: float) -> str:
     sign = "-" if amount < 0 else ""
@@ -1480,6 +1491,8 @@ def _extract_subscriptions(text: str) -> Tuple[List[Dict[str, Any]], str]:
         lowered = normalized.lower()
         normalized = normalized.replace("**", "")
 
+        attributes: Dict[str, str] = {}
+
         token_map: Dict[str, str] = {}
         key_value_pairs: List[Tuple[str, str]] = []
         if ":" in normalized and any(
@@ -1493,6 +1506,7 @@ def _extract_subscriptions(text: str) -> Tuple[List[Dict[str, Any]], str]:
                 clean_value = value.strip()
                 token_map[clean_key.lower()] = clean_value
                 key_value_pairs.append((clean_key, clean_value))
+            attributes = {clean_key.lower(): clean_value for clean_key, clean_value in key_value_pairs if clean_value}
         amount_value: Optional[float] = None
         amount_token: Optional[str] = None
 
@@ -1571,31 +1585,52 @@ def _extract_subscriptions(text: str) -> Tuple[List[Dict[str, Any]], str]:
                 except ValueError:
                     amount_value = None
             detail_text = remainder.strip()
+            attributes = {}
 
         vendor = (vendor or "").strip()
-        if not vendor:
-            kept_lines.append(raw_line)
-            continue
+
+        if amount_token and amount_token in vendor:
+            vendor = vendor.replace(amount_token, "", 1).strip(" -:;•")
 
         if amount_value is None:
             kept_lines.append(raw_line)
             continue
 
-        if amount_token and amount_token in vendor:
-            vendor = vendor.replace(amount_token, "", 1).strip(" -:;•")
-
         if detail_text and amount_token and amount_token in detail_text:
             detail_text = detail_text.replace(amount_token, "", 1).strip()
 
-        if detail_text and detail_text.lower() == vendor.lower():
+        if detail_text and vendor and detail_text.lower() == vendor.lower():
             detail_text = ""
+
+        quote_matches = re.findall(r"\"([^\"]+)\"", normalized)
+        if not quote_matches and detail_text:
+            quote_matches = re.findall(r"\"([^\"]+)\"", detail_text)
+
+        heading_candidates = [
+            vendor,
+            quote_matches[0] if quote_matches else "",
+            detail_text.strip() if detail_text else "",
+            normalized.strip(),
+            raw_line.strip(),
+        ]
+        heading = next((candidate for candidate in heading_candidates if candidate), None)
+        if heading is None:
+            heading = f"Subscription {len(subscriptions) + 1}"
+        if amount_token and heading.startswith(str(amount_token)):
+            heading = heading[len(str(amount_token)) :].strip(" -:;•")
+        if not heading:
+            heading = f"Subscription {len(subscriptions) + 1}"
 
         subscriptions.append(
             {
+                "title": heading,
                 "vendor": vendor,
                 "frequency": (frequency or "").strip(),
                 "monthly_cost": amount_value,
-                "details": detail_text.strip(),
+                "details": detail_text.strip() if detail_text else "",
+                "source": raw_line.strip(),
+                "normalized": normalized.strip(),
+                "attributes": attributes,
             }
         )
 
@@ -1603,31 +1638,71 @@ def _extract_subscriptions(text: str) -> Tuple[List[Dict[str, Any]], str]:
     return subscriptions, cleaned_text
 
 
+def _strip_subscription_amounts(text: str) -> str:
+    cleaned = _SUBSCRIPTION_AMOUNT_PATTERN.sub("", text)
+    cleaned = re.sub(r"\(\s*\)", "", cleaned)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    return cleaned.strip(" -:;•()")
+
+
+def _looks_like_metric_phrase(text: str) -> bool:
+    lowered = text.lower()
+    return any(phrase in lowered for phrase in _SUBSCRIPTION_METRIC_PHRASES)
+
+
 def _render_subscription_sections(subscriptions: List[Dict[str, Any]]) -> str:
     if not subscriptions:
         return ""
 
-    sections: List[str] = ["<div class=\"category-sections\">"]
+    sections: List[str] = ["<div class=\"subscription-grid\">"]
     for entry in subscriptions:
-        vendor = escape(entry.get("vendor", "Unknown vendor"))
-        frequency = (entry.get("frequency") or "").strip()
+        attributes = entry.get("attributes") or {}
+        candidate_fields: List[str] = []
+        for candidate in [
+            entry.get("title"),
+            entry.get("vendor"),
+            attributes.get("vendor"),
+            attributes.get("merchant"),
+            attributes.get("service"),
+            attributes.get("subscription"),
+            attributes.get("provider"),
+            attributes.get("name"),
+            attributes.get("description"),
+            entry.get("details"),
+            entry.get("normalized"),
+            entry.get("source"),
+        ]:
+            if not candidate:
+                continue
+            candidate_fields.append(str(candidate))
+
+        title_raw = ""
+        for candidate in candidate_fields:
+            stripped = re.sub(r"^[*•-]\s*", "", candidate).strip()
+            stripped = _strip_subscription_amounts(stripped)
+            if not stripped:
+                continue
+            if stripped.replace(".", "", 1).isdigit():
+                continue
+            if _looks_like_metric_phrase(stripped):
+                continue
+            title_raw = stripped
+            break
+        if not title_raw:
+            title_raw = "Subscription"
+
+        title_html = escape(title_raw)
         monthly_cost = entry.get("monthly_cost")
-        details = entry.get("details", "")
-
-        sections.append("<article class=\"category-block\">")
-        sections.append(f"<h3>{vendor}</h3>")
-
-        meta_parts: List[str] = []
-        if frequency:
-            meta_parts.append(frequency)
         if monthly_cost is not None:
-            meta_parts.append(f"Monthly cost {escape(_format_currency(monthly_cost))}")
-        meta_line = " · ".join(meta_parts) if meta_parts else "Details unavailable"
-        sections.append(f"<div class=\"category-block__meta\">{escape(meta_line)}</div>")
+            price_line = f"{_format_currency(monthly_cost)} per month"
+        else:
+            price_line = "Price unavailable"
 
-        if details and details.lower() != vendor.lower():
-            sections.append(f"<p>{_format_inline_html(details)}</p>")
-
+        sections.append("<article class=\"subscription-card\">")
+        sections.append(f"<h3 class=\"subscription-card__title\">{title_html}</h3>")
+        sections.append(
+            f"<p class=\"subscription-card__price\">{escape(price_line)}</p>"
+        )
         sections.append("</article>")
     sections.append("</div>")
     return "".join(sections)
@@ -1667,7 +1742,7 @@ def _generate_comparison_report(
         summary_html=summary_html,
         trace_html=trace_html,
         header_title="Statement Comparison Report",
-        header_subtitle="Prepared by the Bank Statement Budgeting Agent",
+        header_subtitle="Prepared by Spend Scout",
         secondary_statement_path=comparison_path,
     )
 
@@ -1945,7 +2020,7 @@ def main() -> None:
     default_statement = workspace / "samples" / "sample_statement_large.csv"
     comparison_sample_statement = workspace / "samples" / "sample_statement_next_month.csv"
     outputs_dir = workspace / "outputs"
-    print("Bank Statement Budgeting Agent")
+    print("Spend Scout")
     print("--------------------------------------------------")
     sample_dir_display = _to_workspace_relative(str(default_statement.parent))
     default_sample_display = _to_workspace_relative(str(default_statement))
