@@ -938,28 +938,166 @@ def _build_html_document(
       margin: 0 0 1.1rem 1.5rem;
       padding: 0;
     }}
-        .category-sections {{
+        .tx-category-section {{
             display: flex;
             flex-direction: column;
-            gap: 1.75rem;
+            gap: 2.25rem;
             margin-top: 2rem;
         }}
-        .category-block {{
+        .tx-category-block {{
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.75rem 1.9rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+            display: grid;
+            gap: 1.35rem;
+        }}
+        .tx-category-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+        }}
+        .tx-category-title {{
+            margin: 0;
+            font-size: 1.18rem;
+            color: var(--accent);
+        }}
+        .tx-category-meta {{
+            font-size: 0.95rem;
+            color: var(--muted);
+        }}
+        .tx-card-grid {{
+            display: grid;
+            gap: 1.15rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }}
+        .tx-card {{
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 1.5rem;
-            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+            padding: 1.2rem 1.3rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+            display: grid;
+            gap: 0.75rem;
         }}
-        .category-block h3 {{
-            margin: 0 0 1rem;
-            color: var(--accent);
-            font-size: 1.15rem;
+        .tx-card__header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
         }}
-        .category-block__meta {{
-            color: var(--muted);
-            margin-bottom: 0.75rem;
+        .tx-card__date {{
             font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--muted);
+        }}
+        .tx-card__amount {{
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }}
+        .tx-card__amount.positive {{
+            color: #2e7d32;
+        }}
+        .tx-card__amount.negative {{
+            color: #d1394a;
+        }}
+        .tx-card__description {{
+            margin: 0;
+            font-size: 1.04rem;
+            color: var(--text);
+            line-height: 1.45;
+        }}
+        .tx-card__details {{
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }}
+        .tx-card__details span {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }}
+        .tx-card__details strong {{
+            color: var(--text);
+            font-weight: 600;
+        }}
+        .tx-card__tag {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            align-self: flex-start;
+        }}
+        .tx-card__tag.tx-card__tag--income {{
+            background: rgba(46, 125, 50, 0.12);
+            color: #2e7d32;
+        }}
+        .tx-card__tag.tx-card__tag--expense {{
+            background: rgba(209, 57, 74, 0.12);
+            color: #d1394a;
+        }}
+        .tx-card-summary-section {{
+            margin-top: 2.5rem;
+            display: grid;
+            gap: 1.35rem;
+        }}
+        .tx-card-summary-title {{
+            margin: 0;
+            font-size: 1.14rem;
+            color: var(--accent);
+        }}
+        .tx-card-summary-grid {{
+            display: grid;
+            gap: 1.2rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }}
+        .tx-card-summary {{
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+            display: grid;
+            gap: 0.85rem;
+        }}
+        .tx-card-summary h3 {{
+            margin: 0;
+            font-size: 1.08rem;
+            color: var(--accent);
+        }}
+        .tx-card-summary__meta {{
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }}
+        .tx-card-summary__stats {{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.45rem;
+            font-size: 0.92rem;
+        }}
+        .tx-card-summary__stats li {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--muted);
+        }}
+        .tx-card-summary__stats li span:last-child {{
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: var(--text);
         }}
         .comparison-grid {{
             display: grid;
@@ -1013,40 +1151,80 @@ def _build_html_document(
         .comparison-delta-neutral {{
             color: var(--muted);
         }}
-        table.tx-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.96rem;
+        .tx-card-grid {{
+            display: grid;
+            gap: 1.2rem;
+            margin-top: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         }}
-        table.tx-table th {{
-            text-align: left;
-            padding: 0.5rem 0.65rem;
-            color: var(--muted);
+        .tx-card {{
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.35rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }}
+        .tx-card__header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+        }}
+        .tx-card__date {{
+            font-size: 0.95rem;
             font-weight: 600;
-            border-bottom: 1px solid var(--border);
+            color: var(--muted);
         }}
-        table.tx-table td {{
-            padding: 0.55rem 0.65rem;
-            border-bottom: 1px solid #eef2fb;
-        }}
-        table.tx-table tr:last-child td {{
-            border-bottom: none;
-        }}
-        .tx-amount {{
-            text-align: right;
+        .tx-card__amount {{
             font-variant-numeric: tabular-nums;
+            font-weight: 700;
         }}
-        .tx-amount.negative {{
-            color: #d1394a;
-        }}
-        .tx-amount.positive {{
+        .tx-card__amount.positive {{
             color: #2e7d32;
         }}
-        .category-total {{
-            margin-top: 1rem;
-            text-align: right;
+        .tx-card__amount.negative {{
+            color: #d1394a;
+        }}
+        .tx-card__description {{
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--text);
+        }}
+        .tx-card__details {{
+            display: grid;
+            gap: 0.35rem;
+            font-size: 0.92rem;
+            color: var(--muted);
+        }}
+        .tx-card__details span {{
+            display: inline-flex;
+            gap: 0.4rem;
+        }}
+        .tx-card__details strong {{
             font-weight: 600;
             color: var(--text);
+        }}
+        .tx-card__tag {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }}
+        .tx-card__tag.tx-card__tag--income {{
+            background: rgba(46, 125, 50, 0.12);
+            color: #2e7d32;
+        }}
+        .tx-card__tag.tx-card__tag--expense {{
+            background: rgba(209, 57, 74, 0.12);
+            color: #d1394a;
         }}
         table.comparison-table {{
             width: 100%;
@@ -1216,6 +1394,9 @@ _NUMBERED_MARKER = re.compile(r"^\d+\.\s+")
 _TRANSACTION_LINE_PATTERN = re.compile(
     r"Date:\s*(?P<date>[^,]+),\s*Description:\s*(?P<description>[^,]+),\s*Category:\s*(?P<category>[^,]+),\s*Amount:\s*(?P<amount>[\-$0-9.,]+)"
 )
+_SIMPLE_TRANSACTION_LINE_PATTERN = re.compile(
+    r"^(?P<date>\d{4}-\d{2}-\d{2})\s*,\s*(?P<description>[^,]+),\s*(?P<category>[^,]+),\s*(?P<amount>[^,]+)$"
+)
 _SUBSCRIPTION_SPLIT_PATTERN = re.compile(r"\s+[-–—]\s+")
 _SUBSCRIPTION_AMOUNT_PATTERN = re.compile(r"\$?\s*([-+]?\d[\d,]*(?:\.\d+)?)", re.IGNORECASE)
 _SUBSCRIPTION_FREQ_KEYWORDS = [
@@ -1265,6 +1446,8 @@ def _extract_transactions(text: str) -> Tuple[List[Dict[str, Any]], str]:
         normalized = stripped.lstrip("-*• ")
         match = _TRANSACTION_LINE_PATTERN.search(normalized)
         if not match:
+            match = _SIMPLE_TRANSACTION_LINE_PATTERN.search(normalized)
+        if not match:
             kept_lines.append(raw_line)
             continue
         amount_str = match.group("amount")
@@ -1290,34 +1473,82 @@ def _extract_transactions(text: str) -> Tuple[List[Dict[str, Any]], str]:
 def _render_transaction_categories(transactions: List[Dict[str, Any]]) -> str:
     if not transactions:
         return ""
-    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    grouped: Dict[str, Dict[str, Any]] = {}
     for tx in transactions:
-        grouped.setdefault(tx["category"], []).append(tx)
-    sections: List[str] = ["<div class=\"category-sections\">"]
-    for category in sorted(grouped.keys()):
-        entries = grouped[category]
-        total = sum(item["amount"] for item in entries)
-        sections.append("<article class=\"category-block\">")
-        sections.append(f"<h3>{escape(category)}</h3>")
-        sections.append(
-            f"<div class=\"category-block__meta\">{len(entries)} transaction(s) · Total {escape(_format_currency(total))}</div>"
+        category = tx["category"]
+        bucket = grouped.setdefault(
+            category,
+            {"transactions": [], "inflow": 0.0, "outflow": 0.0},
         )
-        sections.append("<table class=\"tx-table\"><thead><tr><th>Date</th><th>Description</th><th class=\"tx-amount\">Amount</th></tr></thead><tbody>")
+        bucket["transactions"].append(tx)
+        amount = tx["amount"]
+        if amount >= 0:
+            bucket["inflow"] += amount
+        else:
+            bucket["outflow"] += amount
+
+    ordered = sorted(grouped.items(), key=lambda item: item[0].lower())
+    sections: List[str] = ["<section class=\"tx-category-section\">"]
+    summary_cards: List[str] = []
+
+    for category, data in ordered:
+        entries = sorted(data["transactions"], key=lambda item: item["date"])
+        inflow = data["inflow"]
+        outflow = data["outflow"]
+        net_total = inflow + outflow
+
+        sections.append("<article class=\"tx-category-block\">")
+        sections.append(
+            "<div class=\"tx-category-header\">"
+            f"<h3 class=\"tx-category-title\">{escape(category)}</h3>"
+            f"<span class=\"tx-category-meta\">{len(entries)} transaction(s) · Net {escape(_format_currency(net_total))}</span>"
+            "</div>"
+        )
+        sections.append("<div class=\"tx-card-grid\">")
         for tx in entries:
-            amount_class = "positive" if tx["amount"] >= 0 else "negative"
+            amount = tx["amount"]
+            amount_class = "positive" if amount >= 0 else "negative"
+            flow_label = "Income" if amount >= 0 else "Expense"
+            tag_class = "income" if amount >= 0 else "expense"
             sections.append(
-                "<tr>"
-                f"<td>{escape(tx['date'])}</td>"
-                f"<td>{escape(tx['description'])}</td>"
-                f"<td class=\"tx-amount {amount_class}\">{escape(_format_currency(tx['amount']))}</td>"
-                "</tr>"
+                "<article class=\"tx-card\">"
+                "<div class=\"tx-card__header\">"
+                f"<span class=\"tx-card__date\">{escape(tx['date'])}</span>"
+                f"<span class=\"tx-card__amount {amount_class}\">{escape(_format_currency(amount))}</span>"
+                "</div>"
+                f"<p class=\"tx-card__description\">{escape(tx['description'])}</p>"
+                "<div class=\"tx-card__details\">"
+                f"<span><strong>Category</strong> {escape(category)}</span>"
+                f"<span><strong>Flow</strong> {escape(flow_label)}</span>"
+                "</div>"
+                f"<span class=\"tx-card__tag tx-card__tag--{tag_class}\">{escape(flow_label)}</span>"
+                "</article>"
             )
-        sections.append("</tbody></table>")
-        sections.append(
-            f"<div class=\"category-total\">Category total: {escape(_format_currency(total))}</div>"
-        )
+        sections.append("</div>")
         sections.append("</article>")
-    sections.append("</div>")
+
+        summary_cards.append(
+            "<article class=\"tx-card-summary\">"
+            f"<h3>{escape(category)}</h3>"
+            f"<p class=\"tx-card-summary__meta\">{len(entries)} transaction(s)</p>"
+            "<ul class=\"tx-card-summary__stats\">"
+            f"<li><span>Inflow</span><span>{escape(_format_currency(inflow))}</span></li>"
+            f"<li><span>Outflow</span><span>{escape(_format_currency(outflow))}</span></li>"
+            f"<li><span>Net impact</span><span>{escape(_format_currency(net_total))}</span></li>"
+            "</ul>"
+            "</article>"
+        )
+
+    sections.append("</section>")
+
+    if summary_cards:
+        sections.append("<section class=\"tx-card-summary-section\">")
+        sections.append("<h3 class=\"tx-card-summary-title\">Category Totals</h3>")
+        sections.append("<div class=\"tx-card-summary-grid\">")
+        sections.extend(summary_cards)
+        sections.append("</div>")
+        sections.append("</section>")
+
     return "".join(sections)
 
 
